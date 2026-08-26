@@ -1,0 +1,320 @@
+{
+  "spike": "SPK-006",
+  "result": "LOCAL_PASS",
+  "generatedAt": "2026-08-23T16:15:53.790Z",
+  "environment": {
+    "operatingSystem": "win32 x64",
+    "node": "v24.19.0",
+    "postgres": {
+      "server_version": "18.4",
+      "server_version_num": "180004"
+    },
+    "supabaseCli": "2.115.0",
+    "driver": "pg 8.23.0",
+    "topology": "embedded PostgreSQL over real TCP connections"
+  },
+  "migration": {
+    "command": "supabase migration up --db-url <redacted-db-url> --include-all",
+    "exitCode": 0,
+    "history": [
+      {
+        "version": "20260822213956",
+        "name": "spk006_business_scope_private_schema"
+      },
+      {
+        "version": "20260823161021",
+        "name": "spk006_managed_data_api_probe"
+      }
+    ]
+  },
+  "experiments": [
+    {
+      "id": "scope-static-contract",
+      "title": "BusinessScope is mandatory at repository construction",
+      "expected": "The compiler rejects missing, raw-string, and lookalike scopes",
+      "observed": "tsc exited 0 while three @ts-expect-error assertions were consumed",
+      "outcome": "PASS"
+    },
+    {
+      "id": "runtime-real-login",
+      "title": "Runtime tests use a separately authenticated PostgreSQL connection",
+      "expected": "The session login is unprivileged and can assume only barber_runtime",
+      "observed": "session_user=barber_runtime_harness_login; current_user=barber_runtime",
+      "outcome": "PASS"
+    },
+    {
+      "id": "public-singleton-ambiguous",
+      "title": "Public resolver fails closed with two public Businesses",
+      "expected": "No browser-provided id selects one of two candidates",
+      "observed": "BUSINESS_SCOPE_AMBIGUOUS; observedCount=2",
+      "outcome": "PASS"
+    },
+    {
+      "id": "public-input-ignored",
+      "title": "Public Business is resolved server-side",
+      "expected": "An untrusted browser business_id cannot override the singleton",
+      "observed": "malicious target=00000000-0000-4000-8000-0000000000b2; resolved=00000000-0000-4000-8000-0000000000a1",
+      "outcome": "PASS"
+    },
+    {
+      "id": "admin-auth-resolution",
+      "title": "Admin Business is resolved from admin_auth_user_id",
+      "expected": "Known admin maps to its Business; unknown admin fails closed",
+      "observed": "known=00000000-0000-4000-8000-0000000000b2; unknown=ADMIN_NOT_AUTHORIZED",
+      "outcome": "PASS"
+    },
+    {
+      "id": "public-singleton-missing",
+      "title": "Public resolver fails closed with zero eligible Businesses",
+      "expected": "Zero candidates returns an application error, not an unscoped query",
+      "observed": "BUSINESS_SCOPE_NOT_FOUND",
+      "outcome": "PASS"
+    },
+    {
+      "id": "two-business-isolation",
+      "title": "Repository queries isolate two test Businesses",
+      "expected": "Lists, reads, and writes always include the resolved scope",
+      "observed": "A lists only A; A cannot read/update B; B cannot read A",
+      "outcome": "PASS"
+    },
+    {
+      "id": "unscoped-runtime-risk",
+      "title": "Direct runtime SQL is intentionally not tenant-isolated",
+      "expected": "The experiment identifies that row filtering belongs to Persistence/Application",
+      "observed": "raw authorized SQL observed 2 Businesses; repository SQL observed one",
+      "outcome": "PASS"
+    },
+    {
+      "id": "composite-fk-service",
+      "title": "Appointment cannot reference a Service from another Business",
+      "expected": "Composite FK rejects the insert",
+      "observed": "insert or update on table \"appointment\" violates foreign key constraint \"appointment_service_business_fk\"; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "23503",
+      "constraint": "appointment_service_business_fk"
+    },
+    {
+      "id": "composite-fk-customer",
+      "title": "Appointment cannot reference a Customer from another Business",
+      "expected": "Composite FK rejects the insert",
+      "observed": "insert or update on table \"appointment\" violates foreign key constraint \"appointment_customer_business_fk\"; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "23503",
+      "constraint": "appointment_customer_business_fk"
+    },
+    {
+      "id": "composite-fk-occupancy",
+      "title": "ScheduleOccupancy cannot cross the Appointment Business",
+      "expected": "Composite FK rejects the insert",
+      "observed": "insert or update on table \"schedule_occupancy\" violates foreign key constraint \"schedule_occupancy_appointment_business_fk\"; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "23503",
+      "constraint": "schedule_occupancy_appointment_business_fk"
+    },
+    {
+      "id": "runtime-create-table",
+      "title": "Unauthorized runtime operation: runtime-create-table",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for schema app_private; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-create-schema",
+      "title": "Unauthorized runtime operation: runtime-create-schema",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for database postgres; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-alter-table",
+      "title": "Unauthorized runtime operation: runtime-alter-table",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "must be owner of table service; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-set-role",
+      "title": "Unauthorized runtime operation: runtime-set-role",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied to set role \"postgres\"; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-external-schema",
+      "title": "Unauthorized runtime operation: runtime-external-schema",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for schema external_private; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-public-probe",
+      "title": "Unauthorized runtime operation: runtime-public-probe",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table spk006_public_probe; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-delete",
+      "title": "Unauthorized runtime operation: runtime-delete",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table schedule_occupancy; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-insert-business",
+      "title": "Unauthorized runtime operation: runtime-insert-business",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table business; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-change-admin-owner",
+      "title": "Unauthorized runtime operation: runtime-change-admin-owner",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table business; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-change-service-business",
+      "title": "Unauthorized runtime operation: runtime-change-service-business",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table service; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-change-customer-business",
+      "title": "Unauthorized runtime operation: runtime-change-customer-business",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table customer; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-change-appointment-business",
+      "title": "Unauthorized runtime operation: runtime-change-appointment-business",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table appointment; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-repoint-occupancy",
+      "title": "Unauthorized runtime operation: runtime-repoint-occupancy",
+      "expected": "PostgreSQL rejects it with insufficient_privilege",
+      "observed": "permission denied for table schedule_occupancy; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "runtime-grant",
+      "title": "Runtime cannot delegate its SELECT privilege",
+      "expected": "The target role receives no ACL even if PostgreSQL accepts the GRANT statement",
+      "observed": "no privileges were granted for \"service\"; aclChanged=false; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "01007"
+    },
+    {
+      "id": "runtime-positive-dml",
+      "title": "Minimum runtime role can perform required domain DML",
+      "expected": "SELECT/INSERT/UPDATE succeed on allowlisted objects and columns",
+      "observed": "Business safe-column UPDATE and Service/Customer/Appointment/Occupancy INSERT succeeded",
+      "outcome": "PASS"
+    },
+    {
+      "id": "data-api-role-anon-private-schema",
+      "title": "anon cannot access domain tables",
+      "expected": "Private schema ACL rejects direct SQL even independently of API schema configuration",
+      "observed": "permission denied for schema app_private; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "data-api-role-authenticated-private-schema",
+      "title": "authenticated cannot access domain tables",
+      "expected": "Private schema ACL rejects direct SQL even independently of API schema configuration",
+      "observed": "permission denied for schema app_private; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "data-api-role-service_role-private-schema",
+      "title": "service_role cannot access domain tables",
+      "expected": "Private schema ACL rejects direct SQL even independently of API schema configuration",
+      "observed": "permission denied for schema app_private; connectionReusable=true",
+      "outcome": "PASS",
+      "sqlstate": "42501"
+    },
+    {
+      "id": "data-api-positive-control-sql",
+      "title": "API roles can access only the intended public positive control",
+      "expected": "anon/authenticated SELECT succeeds while app_private SELECT fails",
+      "observed": "Both roles read exactly one RLS-protected public control row",
+      "outcome": "PASS"
+    },
+    {
+      "id": "browser-no-database-credential",
+      "title": "Browser configuration excludes database credentials and domain repositories",
+      "expected": "Only public Supabase Auth configuration crosses the browser boundary",
+      "observed": "Static scan and runtime key inspection found no DATABASE_URL, pg, or repository capability",
+      "outcome": "PASS"
+    },
+    {
+      "id": "private-schema-local-config",
+      "title": "Private schemas are absent from the configured Data API schema allowlist",
+      "expected": "Only public and graphql_public are exposed",
+      "observed": "api.schemas=[\"public\", \"graphql_public\"]",
+      "outcome": "PASS"
+    },
+    {
+      "id": "runtime-privilege-matrix",
+      "title": "Runtime role has explicit least privileges",
+      "expected": "No login/admin attributes, no DELETE/DDL, and only allowlisted domain DML",
+      "observed": "Catalog ACL matrix and role attributes match the declared policy",
+      "outcome": "PASS"
+    },
+    {
+      "id": "future-object-default-acl",
+      "title": "Future app_private objects do not inherit Data API role grants",
+      "expected": "Migration contains explicit owner-scoped default privilege revokes",
+      "observed": "Static migration assertion passed; current object ACLs independently verified in pg_catalog",
+      "outcome": "PASS"
+    }
+  ],
+  "finalState": {
+    "businesses": "2",
+    "services": "3",
+    "customers": "3",
+    "appointments": "2",
+    "occupancies": "2"
+  },
+  "protectionsByLayer": {
+    "postgresql": [
+      "private schema ACLs",
+      "minimal runtime role attributes and object/column grants",
+      "composite foreign keys against cross-Business references",
+      "transaction abort and explicit rollback after SQL errors"
+    ],
+    "applicationPersistence": [
+      "server-side public singleton resolution",
+      "admin resolution by admin_auth_user_id",
+      "branded mandatory BusinessScope",
+      "business_id predicate in every Business-owned repository operation"
+    ],
+    "deliberatelyNotClaimed": [
+      "database-enforced row isolation for arbitrary runtime SQL",
+      "full multi-tenant routing, membership, or RLS",
+      "hosted Data API HTTP behavior (requires managed-environment probe)"
+    ]
+  },
+  "secretsPersisted": false
+}

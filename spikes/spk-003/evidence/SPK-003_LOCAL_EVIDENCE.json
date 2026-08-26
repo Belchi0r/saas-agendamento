@@ -1,0 +1,490 @@
+{
+  "result": "PASS",
+  "generatedAt": "2026-08-23T20:33:58.552Z",
+  "scope": "SPK-003 only; disposable local PostgreSQL and browser laboratory",
+  "environment": {
+    "platform": "win32 10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "openssl": "3.5.7",
+    "postgres": "18.4",
+    "hostedSupabaseUsed": false,
+    "hostedSupabaseReason": "No required guarantee is specific to the managed environment; real PostgreSQL and a real browser exercise the mechanisms under test.",
+    "clocks": "fixed injected instants for domain/TTL tests; wall clock only for evidence timestamp and browser cookie lifetime"
+  },
+  "schema": {
+    "source": "sql/schema.sql",
+    "sha256": "815cc537edc4c5119f69a7abbb1566d80803801c840589f914d1d32b9da74ea3"
+  },
+  "database": {
+    "result": "PASS",
+    "constants": {
+      "tokenBytes": 32,
+      "tokenEntropyBits": 256,
+      "digestBytes": 32,
+      "fingerprintVersion": "book-appointment/v1",
+      "envelopeTtlHours": 24,
+      "idempotencyReceiptTtlHours": 72
+    },
+    "tokenCrypto": {
+      "generator": "node:crypto.randomBytes(32) encoded as base64url",
+      "generatedCount": 256,
+      "uniqueCount": 256,
+      "encodedLengths": [
+        43
+      ],
+      "entropyBits": 256,
+      "hashConstruction": "HMAC-SHA-256(token, application pepper)",
+      "hashLengthBytes": 32,
+      "sameTokenAndPepperStable": true,
+      "differentPepperChangesHash": true,
+      "rawTokenPersisted": false,
+      "pepperPersistedInDatabase": false
+    },
+    "canonicalization": {
+      "pipeline": "validated/normalized command -> versioned canonical object -> recursively key-sorted serialization -> SHA-256",
+      "version": "book-appointment/v1",
+      "knownVector": {
+        "serialization": "{\"customer\":{\"name\":\"Ana María\",\"whatsappE164\":\"+5561999990000\"},\"notes\":\"perto da janela\",\"schedule\":{\"serviceId\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\"startAt\":\"2026-09-10T13:00:00.000Z\"},\"version\":\"book-appointment/v1\"}",
+        "sha256Hex": "d09f2eb441deb0b8aa6bc4549f2ebf06e3add88246bfe14929d9d82ceeaea32b"
+      },
+      "equivalentRepresentationsSameFingerprint": true,
+      "differentIntentDifferentFingerprint": true,
+      "arbitraryJsonSerializationRejectedAsContract": true,
+      "normalizedExample": {
+        "version": "book-appointment/v1",
+        "customer": {
+          "name": "Ana María",
+          "whatsappE164": "+5561999990000"
+        },
+        "schedule": {
+          "serviceId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "startAt": "2026-09-10T13:00:00.000Z"
+        },
+        "notes": "perto da janela"
+      }
+    },
+    "basicTokenLifecycle": {
+      "validLookup": {
+        "authorized": true,
+        "access": "READ_WRITE"
+      },
+      "uniformInvalidLookup": {
+        "invalidToken": {
+          "kind": "INVALID",
+          "status": 404,
+          "code": "MANAGEMENT_LINK_INVALID"
+        },
+        "appointmentIdAlone": {
+          "kind": "INVALID",
+          "status": 404,
+          "code": "MANAGEMENT_LINK_INVALID"
+        },
+        "identicalStatusAndBody": true,
+        "timingClaimedUniform": false
+      },
+      "oneActiveConstraint": {
+        "sqlstate": "23505",
+        "expectedSqlstate": "23505",
+        "connectionReusableAfterRollback": true
+      },
+      "failedRotation": {
+        "oldTokenRemainedValid": true,
+        "uncommittedNewTokenInvalid": true,
+        "atomicRollback": true
+      },
+      "successfulRotation": {
+        "oldTokenInvalid": true,
+        "newTokenValid": true,
+        "activeTokenRows": 1
+      },
+      "terminalState": {
+        "readAllowed": true,
+        "access": "READ_ONLY",
+        "mutation": {
+          "status": 409,
+          "code": "APPOINTMENT_READ_ONLY"
+        }
+      },
+      "revocation": {
+        "lookupMatchesUniformInvalidResponse": true,
+        "activeTokenRows": 0
+      }
+    },
+    "idempotency": {
+      "concurrentSameKeyAndFingerprint": {
+        "synchronization": {
+          "method": "first transaction held the per-key advisory xact lock; observer waited for pg_stat_activity wait_event_type=Lock before release",
+          "arbitrarySleepControlsCorrectness": false,
+          "observedWaitEventType": "Lock",
+          "observedWaitEvent": "advisory"
+        },
+        "dispositions": [
+          "CREATED",
+          "REPLAYED"
+        ],
+        "sameAppointmentId": true,
+        "sameRawTokenRecoveredFromEnvelope": true,
+        "sideEffects": {
+          "appointment_count": "1",
+          "token_count": "1",
+          "receipt_count": "1"
+        }
+      },
+      "sameKeyDifferentFingerprint": {
+        "status": 409,
+        "code": "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST",
+        "sideEffectCountUnchanged": true
+      },
+      "rollbackBeforeCommit": {
+        "totalsBeforeFailure": {
+          "appointments": "2",
+          "receipts": "2",
+          "tokens": "3"
+        },
+        "totalsAfterFailure": {
+          "appointments": "2",
+          "receipts": "2",
+          "tokens": "3"
+        },
+        "unchanged": true,
+        "receiptRowsForFailedKey": "0",
+        "retryDisposition": "CREATED",
+        "retryCreatedOneAppointment": true
+      },
+      "businessScope": {
+        "sameRawKeyAllowedAcrossBusinesses": true,
+        "distinctAppointmentIds": true,
+        "scopedReceiptRows": [
+          {
+            "business_id": "10000000-0000-4000-8000-000000000001",
+            "count": "1"
+          },
+          {
+            "business_id": "10000000-0000-4000-8000-000000000002",
+            "count": "1"
+          }
+        ],
+        "uniquenessKey": "(business_id, operation, key_hash)"
+      }
+    },
+    "responseEnvelope": {
+      "uncertainCommitResponse": {
+        "simulatedFailure": "SIMULATED_RESPONSE_LOSS_AFTER_COMMIT",
+        "committedBeforeResponseLoss": true,
+        "retryDisposition": "REPLAYED",
+        "exactTokenAndLinkRecoverable": true,
+        "sideEffectsAfterRetry": {
+          "appointments": "1",
+          "receipts": "1",
+          "tokens": "1"
+        }
+      },
+      "construction": {
+        "algorithm": "AES-256-GCM",
+        "implementation": "node:crypto createCipheriv/createDecipheriv",
+        "keyBytes": 32,
+        "nonceBytes": 12,
+        "authTagBytes": 16,
+        "additionalAuthenticatedData": "receipt id + business + operation + fingerprint version + envelope expiry",
+        "keyVersion": "env-v2",
+        "keyStoredInDatabase": false,
+        "keyRotationByVersionMap": true
+      },
+      "authenticatedEncryption": {
+        "roundTripExact": true,
+        "randomNonceProducesDistinctNonce": true,
+        "tamperedCiphertextRejected": true
+      },
+      "ttlAndCleanup": {
+        "envelopeTtlHours": 24,
+        "receiptTtlHours": 72,
+        "replayAfterEnvelopeExpiry": {
+          "status": 409,
+          "code": "IDEMPOTENCY_RESPONSE_EXPIRED_ADMIN_REISSUE_REQUIRED"
+        },
+        "expiredEnvelopeRowsCleared": 5,
+        "receiptRetainedToPreventDuplicate": true,
+        "appointmentNotDuplicated": true
+      },
+      "persistedReceiptBeforeCleanup": {
+        "envelope_key_version": "env-v1",
+        "encrypted": true,
+        "ciphertext_differs_from_hash": true
+      },
+      "necessityFinding": {
+        "withoutRecoveryMaterial": "cannot reproduce the raw token from a one-way hash after a commit/response-loss window",
+        "rawTokenStorage": "rejected: database disclosure immediately grants capability",
+        "deterministicTokenFromIdempotencyKey": "rejected: couples two client/server secrets and makes client key compromise a management capability",
+        "encryptedShortTtlEnvelope": "smallest tested mechanism that preserves retry semantics without plaintext persistence"
+      }
+    },
+    "persistenceLeakAudit": {
+      "generatedSecretCountAudited": 269,
+      "databaseProjectionContainsRawSecret": false,
+      "forbiddenSecretColumns": [],
+      "loggerPolicy": "allowlist only: event/result/businessId/appointmentId/sqlstate",
+      "safeLogSample": {
+        "event": "token_lookup",
+        "result": "invalid",
+        "businessId": "10000000-0000-4000-8000-000000000001",
+        "appointmentId": "20000000-0000-4000-8000-000000000001",
+        "sqlstate": "23505"
+      },
+      "safeLogContainsRawSecret": false
+    },
+    "schema": {
+      "postgres": "18.4",
+      "indexes": [
+        {
+          "indexname": "appointment_access_token_appointment_idx",
+          "indexdef": "CREATE INDEX appointment_access_token_appointment_idx ON app_private.appointment_access_token USING btree (appointment_id, issued_at DESC)"
+        },
+        {
+          "indexname": "appointment_access_token_one_active_uq",
+          "indexdef": "CREATE UNIQUE INDEX appointment_access_token_one_active_uq ON app_private.appointment_access_token USING btree (appointment_id) WHERE (revoked_at IS NULL)"
+        },
+        {
+          "indexname": "appointment_access_token_pkey",
+          "indexdef": "CREATE UNIQUE INDEX appointment_access_token_pkey ON app_private.appointment_access_token USING btree (id)"
+        },
+        {
+          "indexname": "appointment_access_token_token_hash_key",
+          "indexdef": "CREATE UNIQUE INDEX appointment_access_token_token_hash_key ON app_private.appointment_access_token USING btree (token_hash)"
+        },
+        {
+          "indexname": "idempotency_request_business_id_operation_key_hash_key",
+          "indexdef": "CREATE UNIQUE INDEX idempotency_request_business_id_operation_key_hash_key ON app_private.idempotency_request USING btree (business_id, operation, key_hash)"
+        },
+        {
+          "indexname": "idempotency_request_envelope_expiry_idx",
+          "indexdef": "CREATE INDEX idempotency_request_envelope_expiry_idx ON app_private.idempotency_request USING btree (envelope_expires_at) WHERE (response_envelope IS NOT NULL)"
+        },
+        {
+          "indexname": "idempotency_request_expiry_idx",
+          "indexdef": "CREATE INDEX idempotency_request_expiry_idx ON app_private.idempotency_request USING btree (expires_at)"
+        },
+        {
+          "indexname": "idempotency_request_pkey",
+          "indexdef": "CREATE UNIQUE INDEX idempotency_request_pkey ON app_private.idempotency_request USING btree (id)"
+        }
+      ],
+      "constraints": [
+        {
+          "constraint_name": "appointment_access_token_appointment_id_fkey",
+          "definition": "FOREIGN KEY (appointment_id) REFERENCES app_private.appointment(id)"
+        },
+        {
+          "constraint_name": "appointment_access_token_appointment_id_not_null",
+          "definition": "NOT NULL appointment_id"
+        },
+        {
+          "constraint_name": "appointment_access_token_id_not_null",
+          "definition": "NOT NULL id"
+        },
+        {
+          "constraint_name": "appointment_access_token_issued_at_not_null",
+          "definition": "NOT NULL issued_at"
+        },
+        {
+          "constraint_name": "appointment_access_token_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "constraint_name": "appointment_access_token_token_hash_check",
+          "definition": "CHECK (octet_length(token_hash) = 32)"
+        },
+        {
+          "constraint_name": "appointment_access_token_token_hash_key",
+          "definition": "UNIQUE (token_hash)"
+        },
+        {
+          "constraint_name": "appointment_access_token_token_hash_not_null",
+          "definition": "NOT NULL token_hash"
+        },
+        {
+          "constraint_name": "appointment_access_token_token_version_check",
+          "definition": "CHECK (token_version > 0)"
+        },
+        {
+          "constraint_name": "appointment_access_token_token_version_not_null",
+          "definition": "NOT NULL token_version"
+        },
+        {
+          "constraint_name": "idempotency_request_appointment_fk",
+          "definition": "FOREIGN KEY (business_id, appointment_id) REFERENCES app_private.appointment(business_id, id)"
+        },
+        {
+          "constraint_name": "idempotency_request_business_id_fkey",
+          "definition": "FOREIGN KEY (business_id) REFERENCES app_private.business(id)"
+        },
+        {
+          "constraint_name": "idempotency_request_business_id_not_null",
+          "definition": "NOT NULL business_id"
+        },
+        {
+          "constraint_name": "idempotency_request_business_id_operation_key_hash_key",
+          "definition": "UNIQUE (business_id, operation, key_hash)"
+        },
+        {
+          "constraint_name": "idempotency_request_created_at_not_null",
+          "definition": "NOT NULL created_at"
+        },
+        {
+          "constraint_name": "idempotency_request_envelope_shape_ck",
+          "definition": "CHECK (response_envelope IS NULL AND envelope_nonce IS NULL AND envelope_auth_tag IS NULL AND envelope_key_version IS NULL AND envelope_expires_at IS NULL OR response_envelope IS NOT NULL AND octet_length(envelope_nonce) = 12 AND octet_length(envelope_auth_tag) = 16 AND envelope_key_version IS NOT NULL AND envelope_expires_at IS NOT NULL)"
+        },
+        {
+          "constraint_name": "idempotency_request_expires_at_not_null",
+          "definition": "NOT NULL expires_at"
+        },
+        {
+          "constraint_name": "idempotency_request_fingerprint_version_not_null",
+          "definition": "NOT NULL fingerprint_version"
+        },
+        {
+          "constraint_name": "idempotency_request_id_not_null",
+          "definition": "NOT NULL id"
+        },
+        {
+          "constraint_name": "idempotency_request_key_hash_check",
+          "definition": "CHECK (octet_length(key_hash) = 32)"
+        },
+        {
+          "constraint_name": "idempotency_request_key_hash_not_null",
+          "definition": "NOT NULL key_hash"
+        },
+        {
+          "constraint_name": "idempotency_request_operation_not_null",
+          "definition": "NOT NULL operation"
+        },
+        {
+          "constraint_name": "idempotency_request_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "constraint_name": "idempotency_request_request_fingerprint_check",
+          "definition": "CHECK (octet_length(request_fingerprint) = 32)"
+        },
+        {
+          "constraint_name": "idempotency_request_request_fingerprint_not_null",
+          "definition": "NOT NULL request_fingerprint"
+        },
+        {
+          "constraint_name": "idempotency_request_response_status_not_null",
+          "definition": "NOT NULL response_status"
+        },
+        {
+          "constraint_name": "idempotency_request_status_check",
+          "definition": "CHECK (status = 'SUCCEEDED'::text)"
+        },
+        {
+          "constraint_name": "idempotency_request_status_not_null",
+          "definition": "NOT NULL status"
+        }
+      ]
+    }
+  },
+  "browser": {
+    "result": "PASS",
+    "generatedAt": "2026-08-23T20:33:20.747Z",
+    "environment": {
+      "platform": "win32 10.0.26200",
+      "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "server": "Node.js local HTTP server bound to 127.0.0.1"
+    },
+    "fragmentExchange": {
+      "tokenEntropyBits": 256,
+      "initialManageRequestContainedRawToken": false,
+      "initialManageRequestContainedFragment": false,
+      "exchangeBodyMatchedTokenInMemory": true,
+      "fragmentRemovedWithHistoryReplaceState": true,
+      "finalExpectedPath": "/manage",
+      "referrerObservedByProbe": null,
+      "thirdPartyRequests": 0
+    },
+    "capabilityCookie": {
+      "attributes": {
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "Strict",
+        "path": "/manage",
+        "maxAgeSeconds": 600
+      },
+      "invisibleToDocumentCookie": true,
+      "sentBackByBrowser": true,
+      "signatureVerifiedServerSide": true,
+      "referenceAndAppointmentVersionRevalidated": true,
+      "sessionAuthorized": true,
+      "payloadContainsRawManagementToken": false
+    },
+    "pagePolicy": {
+      "cacheControl": "private, no-store",
+      "referrerPolicy": "no-referrer",
+      "csp": "default-src 'self'; connect/img/frame only self; no analytics",
+      "externalAnalyticsScripts": 0
+    },
+    "alternatives": {
+      "queryStringRequestExposedRawToken": true,
+      "queryStringDefaultSameOriginReferrerExposedRawToken": true,
+      "fragmentRequestExposedRawToken": false,
+      "fragmentReferrerExposedRawToken": false
+    },
+    "safeRequestLog": [
+      {
+        "method": "GET",
+        "route": "/launch"
+      },
+      {
+        "method": "GET",
+        "route": "/manage"
+      },
+      {
+        "method": "POST",
+        "route": "/exchange"
+      },
+      {
+        "method": "GET",
+        "route": "/manage/session"
+      },
+      {
+        "method": "GET",
+        "route": "/favicon.ico"
+      },
+      {
+        "method": "GET",
+        "route": "/fragment-referrer-probe"
+      },
+      {
+        "method": "GET",
+        "route": "/query-risk"
+      },
+      {
+        "method": "GET",
+        "route": "/query-referrer-probe"
+      },
+      {
+        "method": "POST",
+        "route": "/complete"
+      }
+    ],
+    "browserObservation": {
+      "completionMarker": "SPK003_BROWSER_DONE",
+      "historyLength": 2
+    },
+    "rawSecretLeakAudit": {
+      "evidenceContainsRawToken": false,
+      "safeRequestLogContainsRawToken": false,
+      "launcherStdoutContainsRawToken": false
+    }
+  },
+  "connectionLifecycle": {
+    "probeAfterHandledErrors": true,
+    "poolBeforeClose": {
+      "configuredMax": 12,
+      "totalCount": 3,
+      "idleCount": 3,
+      "waitingCount": 0
+    }
+  }
+}

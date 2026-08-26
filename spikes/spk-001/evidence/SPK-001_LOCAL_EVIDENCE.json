@@ -1,0 +1,341 @@
+{
+  "result": "LOCAL_POSTGRES_PASS",
+  "generatedAt": "2026-08-22T21:22:49.175Z",
+  "scope": "SPK-001 only; disposable PostgreSQL concurrency laboratory",
+  "environment": {
+    "platform": "win32 10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "postgres": "18.4",
+    "btreeGist": "1.8",
+    "synchronization": "in-process release barriers plus pg_stat_activity lock-wait observation; no arbitrary sleep controls correctness",
+    "deadlockDetection": "PostgreSQL deadlock detector with deadlock_timeout=100ms",
+    "windowsHarnessWorkaround": "subst maps the same spike workspace to an ASCII drive path for initdb"
+  },
+  "migration": {
+    "authority": "Supabase CLI",
+    "command": "supabase migration up --db-url <redacted-db-url> --include-all",
+    "stdout": "{\"applied\":[\"C:\\\\Users\\\\Usuário\\\\OneDrive - unb.br\\\\Documentos\\\\ChatGPT\\\\saas-agendamento\\\\spikes\\\\spk-001\\\\supabase\\\\migrations\\\\20260822210000_spk001_booking_concurrency_lab.sql\"],\"message\":\"Migrations applied\"}",
+    "stderr": "Connecting to remote database...\nApplying migration 20260822210000_spk001_booking_concurrency_lab.sql...",
+    "history": [
+      {
+        "version": "20260822210000",
+        "name": "spk001_booking_concurrency_lab"
+      }
+    ],
+    "sha256": "aefcd672e62c4f044138c9a0f89c2f8b703c004a6499cbf532fcc103595e8c0f"
+  },
+  "schemaEvidence": {
+    "versions": {
+      "postgres": "18.4",
+      "btree_gist": "1.8"
+    },
+    "exclusion": {
+      "constraint_definition": "EXCLUDE USING gist (business_id WITH =, occupied_period WITH &&) WHERE (released_at IS NULL)",
+      "index_definition": "CREATE INDEX schedule_occupancy_no_overlap ON app_private.schedule_occupancy USING gist (business_id, occupied_period) WHERE (released_at IS NULL)"
+    },
+    "ownerIntegrityTriggers": [
+      {
+        "trigger_name": "appointment_occupancy_guard",
+        "definition": "CREATE CONSTRAINT TRIGGER appointment_occupancy_guard AFTER INSERT OR DELETE OR UPDATE ON app_private.appointment DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION app_private.check_appointment_occupancy_trigger()",
+        "deferrable": true,
+        "initially_deferred": true
+      },
+      {
+        "trigger_name": "blocked_period_occupancy_guard",
+        "definition": "CREATE CONSTRAINT TRIGGER blocked_period_occupancy_guard AFTER INSERT OR DELETE OR UPDATE ON app_private.blocked_period DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION app_private.check_blocked_period_occupancy_trigger()",
+        "deferrable": true,
+        "initially_deferred": true
+      },
+      {
+        "trigger_name": "schedule_occupancy_owner_guard",
+        "definition": "CREATE CONSTRAINT TRIGGER schedule_occupancy_owner_guard AFTER INSERT OR DELETE OR UPDATE ON app_private.schedule_occupancy DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION app_private.check_occupancy_owner_trigger()",
+        "deferrable": true,
+        "initially_deferred": true
+      }
+    ],
+    "runtimePrivileges": {
+      "runtime_can_select": true,
+      "runtime_can_insert": true,
+      "runtime_can_update": true,
+      "runtime_can_delete": false
+    }
+  },
+  "scenarios": {
+    "ownerIntegrity": {
+      "result": "PASS",
+      "deferredUntilCommit": true,
+      "failures": [
+        {
+          "owner": "booking",
+          "sqlstate": "23514",
+          "constraint": "schedule_occupancy_owner_required",
+          "connectionReusable": true
+        },
+        {
+          "owner": "block",
+          "sqlstate": "23514",
+          "constraint": "schedule_occupancy_owner_required",
+          "connectionReusable": true
+        }
+      ]
+    },
+    "bookingVsBooking": {
+      "result": "PASS",
+      "persistedActiveOccupancies": 1,
+      "outcomes": [
+        {
+          "label": "booking-a",
+          "kind": "booking",
+          "status": "SUCCESS",
+          "ownerId": "7f992278-e168-445a-afb3-a4392e9eccde",
+          "connectionReusable": true
+        },
+        {
+          "label": "booking-b",
+          "kind": "booking",
+          "status": "CONFLICT",
+          "ownerId": "3776a7ff-d34d-46f4-ac2f-2f9eb7dc7f20",
+          "sqlstate": "23P01",
+          "constraint": "schedule_occupancy_no_overlap",
+          "connectionReusable": true
+        }
+      ]
+    },
+    "bookingVsBlock": {
+      "result": "PASS",
+      "persistedActiveOccupancies": 1,
+      "outcomes": [
+        {
+          "label": "booking",
+          "kind": "booking",
+          "status": "SUCCESS",
+          "ownerId": "11bc4d94-8022-43cc-9ccb-9d222dd549b2",
+          "connectionReusable": true
+        },
+        {
+          "label": "block",
+          "kind": "block",
+          "status": "CONFLICT",
+          "ownerId": "99655562-fc25-40d9-8bb2-e7cd1fedbceb",
+          "sqlstate": "23P01",
+          "constraint": "schedule_occupancy_no_overlap",
+          "connectionReusable": true
+        }
+      ]
+    },
+    "rescheduleVsReschedule": {
+      "result": "PASS",
+      "winner": {
+        "expectedVersion": 1,
+        "resultingVersion": 2,
+        "target": {
+          "start": "2035-04-01T11:00:00Z",
+          "end": "2035-04-01T12:00:00Z"
+        }
+      },
+      "loser": {
+        "result": "VERSION_CONFLICT",
+        "expectedVersion": 1,
+        "observedVersion": 2,
+        "target": {
+          "start": "2035-04-01T13:00:00Z",
+          "end": "2035-04-01T14:00:00Z"
+        }
+      },
+      "deterministicWait": {
+        "pid": 6544,
+        "state": "active",
+        "waitEventType": "Lock",
+        "waitEvent": "transactionid",
+        "polls": 1
+      },
+      "final": {
+        "version": 2,
+        "scheduledStartAt": "2035-04-01T11:00:00.000Z",
+        "occupancyStartAt": "2035-04-01T11:00:00.000Z"
+      },
+      "connectionRecovery": {
+        "first": true,
+        "second": true
+      }
+    },
+    "failedRescheduleAtomicity": {
+      "result": "PASS",
+      "sqlstate": "23P01",
+      "constraint": "schedule_occupancy_no_overlap",
+      "originalOccupancyPreserved": true,
+      "appointmentVersionPreserved": 1,
+      "connectionReusable": true
+    },
+    "rangeScopeAndRelease": {
+      "result": "PASS",
+      "adjacentHalfOpen": true,
+      "sameRangeDifferentBusinesses": true,
+      "beforeReleaseConflictSqlstate": "23P01",
+      "releasedCapacityReused": true,
+      "replacementOwnerId": "4cc5fcf6-f238-43ea-93e1-8eef128fe542",
+      "activeOccupanciesAtReleasedPeriod": 1,
+      "connectionReusableAfterConflict": true
+    },
+    "deletionDefense": {
+      "result": "PASS",
+      "runtimeDelete": {
+        "rejected": true,
+        "sqlstate": "42501",
+        "connectionReusable": true
+      },
+      "privilegedActiveDelete": {
+        "deleteStatementInitiallyExecuted": true,
+        "capacityReopenedInsideTransaction": true,
+        "commitRejected": true,
+        "sqlstate": "23514",
+        "constraint": "schedule_occupancy_owner_required",
+        "rollbackRestoredOriginal": true,
+        "connectionReusable": true
+      },
+      "privilegedReleasedHistoryDelete": {
+        "allowedByIntegrityTrigger": true,
+        "runtimeStillHasNoDeletePrivilege": true
+      },
+      "conclusion": "REVOKE DELETE is necessary but not sufficient for privileged paths; the deferred owner-integrity trigger is required. A second BEFORE DELETE trigger is not required for committed integrity."
+    },
+    "globalLockOrder": {
+      "result": "PASS",
+      "deadlock": false,
+      "configurationOrder": [
+        "availability/configuration",
+        "appointment"
+      ],
+      "rescheduleOrder": [
+        "availability/configuration",
+        "appointment"
+      ],
+      "deterministicWait": {
+        "pid": 6544,
+        "state": "active",
+        "waitEventType": "Lock",
+        "waitEvent": "transactionid",
+        "polls": 1
+      },
+      "connectionRecovery": {
+        "configuration": true,
+        "reschedule": true
+      }
+    },
+    "deliberateDeadlocks": {
+      "result": "PASS",
+      "deadlockTimeout": "100ms",
+      "genericTwoAppointmentCycle": {
+        "victims": 1,
+        "sqlstate": "40P01",
+        "outcomes": [
+          {
+            "label": "generic-first",
+            "status": "SURVIVED"
+          },
+          {
+            "label": "generic-second",
+            "status": "DEADLOCK_VICTIM",
+            "sqlstate": "40P01"
+          }
+        ],
+        "connectionRecovery": {
+          "first": true,
+          "second": true
+        }
+      },
+      "globalOrderInversion": {
+        "victims": 1,
+        "sqlstate": "40P01",
+        "outcomes": [
+          {
+            "label": "inversion-first",
+            "status": "SURVIVED"
+          },
+          {
+            "label": "inversion-second",
+            "status": "DEADLOCK_VICTIM",
+            "sqlstate": "40P01"
+          }
+        ],
+        "connectionRecovery": {
+          "first": true,
+          "second": true
+        },
+        "badOrder": [
+          "appointment",
+          "availability/configuration"
+        ],
+        "requiredOrder": [
+          "availability/configuration",
+          "appointment"
+        ]
+      }
+    },
+    "volumeAndGist": {
+      "result": "PASS",
+      "rowsPerHistoryClass": 25000,
+      "totalRowsForVolumeBusiness": 50000,
+      "classes": {
+        "releasedCancelled": 25000,
+        "retainedCompleted": 25000
+      },
+      "insertDurationMs": {
+        "releasedCancelled": 6593.84,
+        "retainedCompleted": 13689.37
+      },
+      "sizes": {
+        "before": {
+          "tableBytes": 8192,
+          "tableTotalBytes": 90112,
+          "gistBytes": 8192
+        },
+        "afterReleased": {
+          "tableBytes": 2932736,
+          "tableTotalBytes": 5390336,
+          "gistBytes": 8192
+        },
+        "afterRetained": {
+          "tableBytes": 5660672,
+          "tableTotalBytes": 13844480,
+          "gistBytes": 3465216
+        }
+      },
+      "gistGrowthBytes": {
+        "releasedCancelled": 0,
+        "retainedCompleted": 3457024
+      },
+      "partialIndexFinding": "released_at IS NOT NULL rows stayed outside the partial GiST; completed history with released_at IS NULL grew the GiST",
+      "overlapProbePlan": {
+        "planningTimeMs": 0.387,
+        "executionTimeMs": 0.124,
+        "nodes": [
+          {
+            "nodeType": "Index Scan",
+            "indexName": "schedule_occupancy_no_overlap",
+            "actualRows": 1,
+            "actualTotalTimeMs": 0.094,
+            "sharedHitBlocks": 4,
+            "sharedReadBlocks": 0
+          }
+        ]
+      }
+    }
+  },
+  "sqlstates": {
+    "exclusionViolation": "23P01",
+    "ownerIntegrityCheck": "23514",
+    "insufficientPrivilege": "42501",
+    "deadlockDetected": "40P01"
+  },
+  "poolLifecycle": {
+    "beforeClose": {
+      "configuredMax": 12,
+      "totalCount": 1,
+      "idleCount": 1,
+      "waitingCount": 0
+    },
+    "queryRejectedAfterClose": true
+  }
+}

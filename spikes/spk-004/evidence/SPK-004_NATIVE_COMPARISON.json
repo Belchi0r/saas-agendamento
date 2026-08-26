@@ -1,0 +1,122 @@
+{
+  "runtimeDefault": {
+    "availability": "UNAVAILABLE",
+    "globalType": "undefined"
+  },
+  "runtimeExperimental": {
+    "availability": "EXPERIMENTAL_FLAG",
+    "globalType": "object",
+    "namespaceKeys": [],
+    "vectors": {
+      "gap": {
+        "earlier": {
+          "instantUtc": "2025-03-09T06:30:00Z",
+          "localRoundTrip": "2025-03-09T01:30:00",
+          "offset": "-05:00"
+        },
+        "later": {
+          "instantUtc": "2025-03-09T07:30:00Z",
+          "localRoundTrip": "2025-03-09T03:30:00",
+          "offset": "-04:00"
+        },
+        "compatible": {
+          "instantUtc": "2025-03-09T07:30:00Z",
+          "localRoundTrip": "2025-03-09T03:30:00",
+          "offset": "-04:00"
+        },
+        "reject": {
+          "error": "RangeError",
+          "message": "Invalid time value for Temporal ..\\..\\deps\\v8\\src\\objects\\js-temporal-objects.cc:1798"
+        }
+      },
+      "fold": {
+        "earlier": {
+          "instantUtc": "2025-11-02T05:30:00Z",
+          "localRoundTrip": "2025-11-02T01:30:00",
+          "offset": "-04:00"
+        },
+        "later": {
+          "instantUtc": "2025-11-02T06:30:00Z",
+          "localRoundTrip": "2025-11-02T01:30:00",
+          "offset": "-05:00"
+        },
+        "compatible": {
+          "instantUtc": "2025-11-02T05:30:00Z",
+          "localRoundTrip": "2025-11-02T01:30:00",
+          "offset": "-04:00"
+        },
+        "reject": {
+          "error": "RangeError",
+          "message": "Invalid time value for Temporal ..\\..\\deps\\v8\\src\\objects\\js-temporal-objects.cc:1791"
+        }
+      }
+    }
+  },
+  "polyfill": {
+    "availability": "POLYFILL_IMPORT",
+    "globalType": "undefined",
+    "namespaceKeys": [
+      "Duration",
+      "Instant",
+      "Now",
+      "PlainDate",
+      "PlainDateTime",
+      "PlainMonthDay",
+      "PlainTime",
+      "PlainYearMonth",
+      "ZonedDateTime"
+    ],
+    "vectors": {
+      "gap": {
+        "earlier": {
+          "instantUtc": "2025-03-09T06:30:00Z",
+          "localRoundTrip": "2025-03-09T01:30:00",
+          "offset": "-05:00"
+        },
+        "later": {
+          "instantUtc": "2025-03-09T07:30:00Z",
+          "localRoundTrip": "2025-03-09T03:30:00",
+          "offset": "-04:00"
+        },
+        "compatible": {
+          "instantUtc": "2025-03-09T07:30:00Z",
+          "localRoundTrip": "2025-03-09T03:30:00",
+          "offset": "-04:00"
+        },
+        "reject": {
+          "error": "RangeError",
+          "message": "multiple instants found"
+        }
+      },
+      "fold": {
+        "earlier": {
+          "instantUtc": "2025-11-02T05:30:00Z",
+          "localRoundTrip": "2025-11-02T01:30:00",
+          "offset": "-04:00"
+        },
+        "later": {
+          "instantUtc": "2025-11-02T06:30:00Z",
+          "localRoundTrip": "2025-11-02T01:30:00",
+          "offset": "-05:00"
+        },
+        "compatible": {
+          "instantUtc": "2025-11-02T05:30:00Z",
+          "localRoundTrip": "2025-11-02T01:30:00",
+          "offset": "-04:00"
+        },
+        "reject": {
+          "error": "RangeError",
+          "message": "multiple instants found"
+        }
+      }
+    }
+  },
+  "semanticMatchUnderExperimentalFlag": true,
+  "differences": [
+    "globalThis.Temporal is undefined in the default Node runtime",
+    "native Temporal requires the in-progress --harmony-temporal flag",
+    "the polyfill is imported explicitly and does not install a global",
+    "native and polyfill RangeError messages differ; policy relies only on classification/round-trip, not message text"
+  ],
+  "criticalIncompatibility": false
+}

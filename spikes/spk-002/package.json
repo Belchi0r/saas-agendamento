@@ -1,0 +1,33 @@
+{
+  "name": "barber-spk-002",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Disposable technical spike for Drizzle, Supabase CLI migrations, PostgreSQL, and Supavisor transaction mode.",
+  "type": "module",
+  "engines": {
+    "node": "24.19.0"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "candidate:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:local": "tsx scripts/run-local-spike.ts",
+    "test:remote": "tsx scripts/run-supavisor-spike.ts",
+    "versions": "tsx scripts/versions.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.10",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.10",
+    "embedded-postgres": "18.4.0-beta.17",
+    "supabase": "2.115.0",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

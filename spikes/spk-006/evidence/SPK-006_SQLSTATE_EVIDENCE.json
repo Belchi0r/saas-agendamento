@@ -1,0 +1,145 @@
+[
+  {
+    "id": "composite-fk-service",
+    "sqlstate": "23503",
+    "message": "insert or update on table \"appointment\" violates foreign key constraint \"appointment_service_business_fk\"",
+    "constraint": "appointment_service_business_fk",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "composite-fk-customer",
+    "sqlstate": "23503",
+    "message": "insert or update on table \"appointment\" violates foreign key constraint \"appointment_customer_business_fk\"",
+    "constraint": "appointment_customer_business_fk",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "composite-fk-occupancy",
+    "sqlstate": "23503",
+    "message": "insert or update on table \"schedule_occupancy\" violates foreign key constraint \"schedule_occupancy_appointment_business_fk\"",
+    "constraint": "schedule_occupancy_appointment_business_fk",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-create-table",
+    "sqlstate": "42501",
+    "message": "permission denied for schema app_private",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-create-schema",
+    "sqlstate": "42501",
+    "message": "permission denied for database postgres",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-alter-table",
+    "sqlstate": "42501",
+    "message": "must be owner of table service",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-set-role",
+    "sqlstate": "42501",
+    "message": "permission denied to set role \"postgres\"",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-external-schema",
+    "sqlstate": "42501",
+    "message": "permission denied for schema external_private",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-public-probe",
+    "sqlstate": "42501",
+    "message": "permission denied for table spk006_public_probe",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-delete",
+    "sqlstate": "42501",
+    "message": "permission denied for table schedule_occupancy",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-insert-business",
+    "sqlstate": "42501",
+    "message": "permission denied for table business",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-change-admin-owner",
+    "sqlstate": "42501",
+    "message": "permission denied for table business",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-change-service-business",
+    "sqlstate": "42501",
+    "message": "permission denied for table service",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-change-customer-business",
+    "sqlstate": "42501",
+    "message": "permission denied for table customer",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-change-appointment-business",
+    "sqlstate": "42501",
+    "message": "permission denied for table appointment",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-repoint-occupancy",
+    "sqlstate": "42501",
+    "message": "permission denied for table schedule_occupancy",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "runtime-grant",
+    "sqlstate": "01007",
+    "message": "no privileges were granted for \"service\"",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "barber_runtime"
+  },
+  {
+    "id": "data-api-role-anon-private-schema",
+    "sqlstate": "42501",
+    "message": "permission denied for schema app_private",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "anon"
+  },
+  {
+    "id": "data-api-role-authenticated-private-schema",
+    "sqlstate": "42501",
+    "message": "permission denied for schema app_private",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "authenticated"
+  },
+  {
+    "id": "data-api-role-service_role-private-schema",
+    "sqlstate": "42501",
+    "message": "permission denied for schema app_private",
+    "connectionReusable": true,
+    "currentRoleAfterRecovery": "service_role"
+  }
+]

@@ -1,0 +1,196 @@
+{
+  "spike": "SPK-005",
+  "phase": "REMOTE",
+  "result": "REMOTE_PASS",
+  "generatedAt": "2026-08-23T17:20:15.786Z",
+  "environment": {
+    "operatingSystem": "win32 x64",
+    "managedSupabaseAuth": true,
+    "serviceRoleUsed": false,
+    "node": "v24.19.0",
+    "v8": "13.6.233.17-node.51",
+    "openssl": "3.5.7",
+    "supabaseSsr": "0.12.4",
+    "supabaseJs": "2.112.3",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "reactDom": "19.2.8",
+    "typescript": "7.0.2",
+    "tsx": "4.23.12",
+    "pnpm": "11.19.0"
+  },
+  "authentication": {
+    "absentSession": {
+      "user": null,
+      "authorizationStatus": 401,
+      "error": {
+        "name": "AuthSessionMissingError",
+        "status": 400,
+        "code": null
+      }
+    },
+    "invalidPassword": {
+      "rejected": true,
+      "session": null,
+      "error": {
+        "name": "AuthApiError",
+        "status": 400,
+        "code": "invalid_credentials"
+      }
+    },
+    "validLogin": {
+      "accepted": true,
+      "userStableAcrossRequests": true,
+      "subsequentGetUserSucceeded": true
+    }
+  },
+  "requestScopedClient": {
+    "parallelClientsDistinct": true,
+    "authenticatedClientSawUser": true,
+    "emptyClientSawUser": false,
+    "sharedStateObserved": false
+  },
+  "refresh": {
+    "succeeded": true,
+    "cookieStateRotated": true,
+    "subsequentGetUserSucceeded": true,
+    "refreshWrites": [
+      {
+        "name": "sb-<project-ref>-auth-token",
+        "action": "SET",
+        "valuePresent": true,
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "httpOnly": false,
+        "maxAge": 34560000,
+        "domain": null
+      }
+    ]
+  },
+  "expiration": {
+    "jwtExpClaimMatchedSessionExpiresAt": true,
+    "secondsUntilExpiryAtMeasurement": 301,
+    "waitedMilliseconds": 300239,
+    "expiredAccessAndRevokedRefreshRejected": true,
+    "error": {
+      "name": "AuthApiError",
+      "status": 400,
+      "code": "refresh_token_not_found"
+    }
+  },
+  "logout": {
+    "scope": "global",
+    "serverAccepted": true,
+    "cleanBrowserCookiesCleared": true,
+    "nextCleanRequestAuthenticated": false,
+    "retainedAccessTokenAcceptedBeforeExpiry": false,
+    "retainedAccessTokenAcceptedAfterExpiry": false,
+    "cookieWrites": [
+      {
+        "name": "sb-<project-ref>-auth-token",
+        "action": "DELETE",
+        "valuePresent": false,
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "httpOnly": false,
+        "maxAge": 0,
+        "domain": null
+      }
+    ]
+  },
+  "recovery": {
+    "requestAcceptedByManagedAuth": true,
+    "pkceCodeVerifierCookieWritten": true,
+    "redirectWasConfigured": true,
+    "emailDeliveryInspected": false,
+    "linkExchangeCompleted": false,
+    "cookieWrites": [
+      {
+        "name": "sb-<project-ref>-auth-token-flow-7f0cded0eb7123bd57c20ae093ba3d4b-code-verifier",
+        "action": "SET",
+        "valuePresent": true,
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "httpOnly": false,
+        "maxAge": 34560000,
+        "domain": null
+      },
+      {
+        "name": "sb-<project-ref>-auth-token-flows-code-verifier",
+        "action": "SET",
+        "valuePresent": true,
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "httpOnly": false,
+        "maxAge": 34560000,
+        "domain": null
+      },
+      {
+        "name": "sb-<project-ref>-auth-token-code-verifier",
+        "action": "SET",
+        "valuePresent": true,
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "httpOnly": false,
+        "maxAge": 34560000,
+        "domain": null
+      }
+    ]
+  },
+  "cookies": {
+    "beforeLoginCount": 0,
+    "loginWrites": [
+      {
+        "name": "sb-<project-ref>-auth-token",
+        "action": "SET",
+        "valuePresent": true,
+        "path": "/",
+        "sameSite": "lax",
+        "secure": true,
+        "httpOnly": false,
+        "maxAge": 34560000,
+        "domain": null
+      }
+    ],
+    "afterLoginCookieCount": 1,
+    "afterRefreshCookieCount": 1,
+    "afterLogoutCookieCount": 0,
+    "valuesPersistedInEvidence": false,
+    "officialResponseCacheHeadersObserved": {
+      "cacheControl": "private, no-cache, no-store, must-revalidate, max-age=0",
+      "expires": "0",
+      "pragma": "no-cache"
+    }
+  },
+  "authorization": {
+    "authnMethod": "auth.getUser()",
+    "matchingBusinessStatus": 200,
+    "nonMatchingBusinessStatus": 403,
+    "crossScopedRepositoryStatus": 403,
+    "authnAndAuthzSeparated": true
+  },
+  "cache": {
+    "cache-control": "private, no-cache, no-store, must-revalidate, max-age=0",
+    "cdn-cache-control": "private, no-store",
+    "expires": "0",
+    "pragma": "no-cache",
+    "vary": "Cookie",
+    "vercel-cdn-cache-control": "private, no-store"
+  },
+  "csrf": {
+    "validOriginHost": "ALLOWED",
+    "invalidCrossSiteOrigin": "ORIGIN_NOT_ALLOWED"
+  },
+  "secrets": {
+    "serviceRoleRead": false,
+    "tokenValuesWrittenToEvidence": false,
+    "emailWrittenToEvidence": false,
+    "passwordWrittenToEvidence": false,
+    "projectRefWrittenToEvidence": false
+  }
+}

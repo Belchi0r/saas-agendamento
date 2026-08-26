@@ -1,0 +1,27 @@
+{
+  "name": "barber-spk-003",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Disposable customer access-token and idempotency spike.",
+  "type": "module",
+  "engines": {
+    "node": "24.19.0"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:browser-server": "tsx scripts/run-browser-harness.ts",
+    "test:local": "tsx scripts/run-local-spike.ts",
+    "test": "pnpm test:local"
+  },
+  "dependencies": {
+    "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.10",
+    "@types/pg": "8.23.1",
+    "embedded-postgres": "18.4.0-beta.17",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2"
+  }
+}

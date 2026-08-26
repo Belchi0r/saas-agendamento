@@ -1,0 +1,93 @@
+{
+  "result": "PASS",
+  "generatedAt": "2026-08-23T20:33:20.747Z",
+  "environment": {
+    "platform": "win32 10.0.26200",
+    "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "server": "Node.js local HTTP server bound to 127.0.0.1"
+  },
+  "fragmentExchange": {
+    "tokenEntropyBits": 256,
+    "initialManageRequestContainedRawToken": false,
+    "initialManageRequestContainedFragment": false,
+    "exchangeBodyMatchedTokenInMemory": true,
+    "fragmentRemovedWithHistoryReplaceState": true,
+    "finalExpectedPath": "/manage",
+    "referrerObservedByProbe": null,
+    "thirdPartyRequests": 0
+  },
+  "capabilityCookie": {
+    "attributes": {
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Strict",
+      "path": "/manage",
+      "maxAgeSeconds": 600
+    },
+    "invisibleToDocumentCookie": true,
+    "sentBackByBrowser": true,
+    "signatureVerifiedServerSide": true,
+    "referenceAndAppointmentVersionRevalidated": true,
+    "sessionAuthorized": true,
+    "payloadContainsRawManagementToken": false
+  },
+  "pagePolicy": {
+    "cacheControl": "private, no-store",
+    "referrerPolicy": "no-referrer",
+    "csp": "default-src 'self'; connect/img/frame only self; no analytics",
+    "externalAnalyticsScripts": 0
+  },
+  "alternatives": {
+    "queryStringRequestExposedRawToken": true,
+    "queryStringDefaultSameOriginReferrerExposedRawToken": true,
+    "fragmentRequestExposedRawToken": false,
+    "fragmentReferrerExposedRawToken": false
+  },
+  "safeRequestLog": [
+    {
+      "method": "GET",
+      "route": "/launch"
+    },
+    {
+      "method": "GET",
+      "route": "/manage"
+    },
+    {
+      "method": "POST",
+      "route": "/exchange"
+    },
+    {
+      "method": "GET",
+      "route": "/manage/session"
+    },
+    {
+      "method": "GET",
+      "route": "/favicon.ico"
+    },
+    {
+      "method": "GET",
+      "route": "/fragment-referrer-probe"
+    },
+    {
+      "method": "GET",
+      "route": "/query-risk"
+    },
+    {
+      "method": "GET",
+      "route": "/query-referrer-probe"
+    },
+    {
+      "method": "POST",
+      "route": "/complete"
+    }
+  ],
+  "browserObservation": {
+    "completionMarker": "SPK003_BROWSER_DONE",
+    "historyLength": 2
+  },
+  "rawSecretLeakAudit": {
+    "evidenceContainsRawToken": false,
+    "safeRequestLogContainsRawToken": false,
+    "launcherStdoutContainsRawToken": false
+  }
+}

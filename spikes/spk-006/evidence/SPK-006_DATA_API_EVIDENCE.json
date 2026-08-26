@@ -1,0 +1,134 @@
+{
+  "spike": "SPK-006",
+  "result": "REMOTE_PASS",
+  "generatedAt": "2026-08-23T16:13:10.397Z",
+  "environmentLabel": "SPK006_DISPOSABLE",
+  "transport": {
+    "database": "managed PostgreSQL TLS connection",
+    "dataApi": "managed Supabase REST endpoint over HTTPS",
+    "projectHostnamePersisted": false
+  },
+  "migration": {
+    "file": "20260823161021_spk006_managed_data_api_probe.sql",
+    "scope": "public positive-control object only",
+    "appliedInSingleTransaction": true,
+    "appliedThisRun": false,
+    "schemaCacheReloadRequested": true
+  },
+  "priorPrivateInfrastructure": {
+    "source": "existing disposable-project infrastructure",
+    "objectNames": [
+      "business",
+      "schedule_occupancy",
+      "transaction_probe"
+    ],
+    "metadataBefore": {
+      "schema": [
+        {
+          "schema_name": "app_private",
+          "owner": "postgres",
+          "acl": null
+        }
+      ],
+      "objects": [
+        {
+          "object_name": "business",
+          "object_kind": "r",
+          "owner": "postgres",
+          "acl": null
+        },
+        {
+          "object_name": "schedule_occupancy",
+          "object_kind": "r",
+          "owner": "postgres",
+          "acl": null
+        },
+        {
+          "object_name": "transaction_probe",
+          "object_kind": "r",
+          "owner": "postgres",
+          "acl": null
+        }
+      ],
+      "apiRolePrivileges": [
+        {
+          "role_name": "anon",
+          "can_use": false,
+          "can_create": false
+        },
+        {
+          "role_name": "authenticated",
+          "can_use": false,
+          "can_create": false
+        },
+        {
+          "role_name": "service_role",
+          "can_use": false,
+          "can_create": false
+        }
+      ]
+    },
+    "metadataUnchangedAfterProbe": true
+  },
+  "catalog": {
+    "anon_has_private_usage": false,
+    "authenticated_has_private_usage": false,
+    "service_role_has_private_usage": false,
+    "anon_can_read_probe": true,
+    "authenticated_can_read_probe": true,
+    "probe_has_rls": true
+  },
+  "http": [
+    {
+      "id": "managed-data-api-positive-control",
+      "method": "GET",
+      "path": "/rest/v1/spk006_public_probe?select=id,label",
+      "status": 200,
+      "body": [
+        {
+          "id": 1,
+          "label": "data-api-positive-control"
+        }
+      ],
+      "attempts": 1
+    },
+    {
+      "id": "managed-private-schema-read",
+      "method": "GET",
+      "path": "/rest/v1/business?select=id",
+      "requestProfile": "app_private",
+      "status": 406,
+      "body": {
+        "code": "PGRST106",
+        "details": null,
+        "hint": "Only the following schemas are exposed: public, graphql_public",
+        "message": "Invalid schema: app_private"
+      },
+      "attempts": 1
+    },
+    {
+      "id": "managed-private-schema-write",
+      "method": "POST",
+      "path": "/rest/v1/business",
+      "requestProfile": "app_private",
+      "status": 406,
+      "body": {
+        "code": "PGRST106",
+        "details": null,
+        "hint": "Only the following schemas are exposed: public, graphql_public",
+        "message": "Invalid schema: app_private"
+      },
+      "attempts": 1
+    }
+  ],
+  "negativeWritePersistedRows": "0",
+  "conclusion": {
+    "positiveControlReachable": true,
+    "appPrivateNotExposed": true,
+    "privateReadRejectedBeforeObjectAccess": true,
+    "privateWriteRejectedBeforeObjectAccess": true,
+    "apiRolesAlsoLackPrivateSchemaAcl": true,
+    "priorPrivateInfrastructurePreserved": true
+  },
+  "secretsPersisted": false
+}

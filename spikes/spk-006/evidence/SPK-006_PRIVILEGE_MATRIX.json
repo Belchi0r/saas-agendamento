@@ -1,0 +1,427 @@
+{
+  "roleAttributes": {
+    "rolname": "barber_runtime",
+    "rolsuper": false,
+    "rolinherit": false,
+    "rolcreaterole": false,
+    "rolcreatedb": false,
+    "rolcanlogin": false,
+    "rolreplication": false,
+    "rolbypassrls": false,
+    "rolconnlimit": 12
+  },
+  "schemaUsage": {
+    "barber_runtime": {
+      "app_private": true,
+      "public": true,
+      "external_private": false
+    },
+    "anon": {
+      "app_private": false,
+      "public": true,
+      "external_private": false
+    },
+    "authenticated": {
+      "app_private": false,
+      "public": true,
+      "external_private": false
+    },
+    "service_role": {
+      "app_private": false,
+      "public": true,
+      "external_private": false
+    }
+  },
+  "tablePrivileges": {
+    "barber_runtime": {
+      "app_private.business": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.service": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.customer": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.appointment": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.schedule_occupancy": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "public.spk006_public_probe": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "external_private.secret_probe": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      }
+    },
+    "anon": {
+      "app_private.business": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.service": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.customer": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.appointment": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.schedule_occupancy": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "public.spk006_public_probe": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "external_private.secret_probe": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      }
+    },
+    "authenticated": {
+      "app_private.business": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.service": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.customer": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.appointment": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.schedule_occupancy": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "public.spk006_public_probe": {
+        "SELECT": true,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "external_private.secret_probe": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      }
+    },
+    "service_role": {
+      "app_private.business": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.service": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.customer": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.appointment": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "app_private.schedule_occupancy": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "public.spk006_public_probe": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      },
+      "external_private.secret_probe": {
+        "SELECT": false,
+        "INSERT": false,
+        "UPDATE": false,
+        "DELETE": false,
+        "TRUNCATE": false,
+        "REFERENCES": false,
+        "TRIGGER": false
+      }
+    }
+  },
+  "businessColumnUpdate": [
+    {
+      "column_name": "id",
+      "can_update": false
+    },
+    {
+      "column_name": "public_name",
+      "can_update": true
+    },
+    {
+      "column_name": "admin_auth_user_id",
+      "can_update": false
+    },
+    {
+      "column_name": "public_booking_enabled",
+      "can_update": true
+    },
+    {
+      "column_name": "operational_enabled",
+      "can_update": true
+    },
+    {
+      "column_name": "availability_version",
+      "can_update": true
+    }
+  ],
+  "domainColumnPrivileges": [
+    {
+      "table_name": "appointment",
+      "column_name": "id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "appointment",
+      "column_name": "business_id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "appointment",
+      "column_name": "service_id",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "appointment",
+      "column_name": "customer_id",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "appointment",
+      "column_name": "status",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "customer",
+      "column_name": "id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "customer",
+      "column_name": "business_id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "customer",
+      "column_name": "display_name",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "schedule_occupancy",
+      "column_name": "id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "schedule_occupancy",
+      "column_name": "business_id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "schedule_occupancy",
+      "column_name": "appointment_id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "schedule_occupancy",
+      "column_name": "released_at",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "service",
+      "column_name": "id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "service",
+      "column_name": "business_id",
+      "can_insert": true,
+      "can_update": false
+    },
+    {
+      "table_name": "service",
+      "column_name": "name",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "service",
+      "column_name": "active",
+      "can_insert": true,
+      "can_update": true
+    },
+    {
+      "table_name": "service",
+      "column_name": "version",
+      "can_insert": true,
+      "can_update": true
+    }
+  ]
+}

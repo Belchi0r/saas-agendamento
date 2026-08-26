@@ -1,0 +1,24 @@
+{
+  "name": "barber-spk-004",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Disposable spike for IANA timezone, DST, Temporal, UTC instants, and confirmation snapshots.",
+  "type": "module",
+  "engines": {
+    "node": "24.19.0"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx scripts/run-spike.ts",
+    "versions": "tsx scripts/versions.ts"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "0.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.10",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2"
+  }
+}

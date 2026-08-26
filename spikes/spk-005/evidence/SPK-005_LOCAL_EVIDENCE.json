@@ -1,0 +1,239 @@
+{
+  "spike": "SPK-005",
+  "phase": "LOCAL",
+  "result": "LOCAL_PASS",
+  "generatedAt": "2026-08-23T17:23:24.638Z",
+  "environment": {
+    "operatingSystem": "win32 x64",
+    "node": "v24.19.0",
+    "v8": "13.6.233.17-node.51",
+    "openssl": "3.5.7",
+    "supabaseSsr": "0.12.4",
+    "supabaseJs": "2.112.3",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "reactDom": "19.2.8",
+    "typescript": "7.0.2",
+    "tsx": "4.23.12",
+    "pnpm": "11.19.0"
+  },
+  "summary": {
+    "passed": 18,
+    "failed": 0,
+    "remoteAuthRequiredForFinalDecision": true
+  },
+  "cases": [
+    {
+      "id": "authn-missing-session",
+      "expected": "401",
+      "observed": "401",
+      "status": "PASS"
+    },
+    {
+      "id": "authn-valid-authz-valid",
+      "expected": "200",
+      "observed": "200",
+      "status": "PASS"
+    },
+    {
+      "id": "authn-valid-authz-wrong-user",
+      "expected": "403",
+      "observed": "403",
+      "status": "PASS"
+    },
+    {
+      "id": "cross-business-fail-closed",
+      "expected": "403 invariant failure",
+      "observed": "BUSINESS_SCOPE_INVARIANT_FAILED",
+      "status": "PASS"
+    },
+    {
+      "id": "request-scoped-clients",
+      "expected": "32 clients and cookie jars with no shared identity",
+      "observed": "32 distinct clients and 32 isolated jars",
+      "status": "PASS"
+    },
+    {
+      "id": "official-cookie-defaults",
+      "expected": "path=/, SameSite=Lax, HttpOnly=false, no Secure default",
+      "observed": "exact defaults found in @supabase/ssr 0.12.4 source",
+      "status": "PASS"
+    },
+    {
+      "id": "production-cookie-serialization",
+      "expected": "Secure; SameSite=Lax; no HttpOnly claim",
+      "observed": "NextResponse serialized the explicit policy",
+      "status": "PASS"
+    },
+    {
+      "id": "authenticated-cache-policy",
+      "expected": "private/no-store for browser, CDN, and Vercel",
+      "observed": "all explicit response headers preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "next-server-action-csrf",
+      "expected": "origin/host mismatch aborts; default no-store",
+      "observed": "Next 16.3.2 aborts mismatch but only warns on missing Origin",
+      "status": "PASS"
+    },
+    {
+      "id": "browser-domain-boundary",
+      "expected": "browser wrapper exposes Auth only",
+      "observed": "no domain .from(), service role, or Business authorization",
+      "status": "PASS"
+    },
+    {
+      "id": "valid-origin-host",
+      "expected": "ALLOWED",
+      "observed": "ALLOWED",
+      "status": "PASS"
+    },
+    {
+      "id": "valid-forwarded-host",
+      "expected": "ALLOWED",
+      "observed": "ALLOWED",
+      "status": "PASS"
+    },
+    {
+      "id": "get-never-mutates",
+      "expected": "MUTATION_METHOD_REQUIRED",
+      "observed": "MUTATION_METHOD_REQUIRED",
+      "status": "PASS"
+    },
+    {
+      "id": "origin-required",
+      "expected": "ORIGIN_REQUIRED",
+      "observed": "ORIGIN_REQUIRED",
+      "status": "PASS"
+    },
+    {
+      "id": "cross-site-origin",
+      "expected": "ORIGIN_NOT_ALLOWED",
+      "observed": "ORIGIN_NOT_ALLOWED",
+      "status": "PASS"
+    },
+    {
+      "id": "host-injection",
+      "expected": "HOST_NOT_ALLOWED",
+      "observed": "HOST_NOT_ALLOWED",
+      "status": "PASS"
+    },
+    {
+      "id": "origin-host-mismatch",
+      "expected": "ORIGIN_HOST_MISMATCH",
+      "observed": "ORIGIN_HOST_MISMATCH",
+      "status": "PASS"
+    },
+    {
+      "id": "https-required-production",
+      "expected": "HTTPS_ORIGIN_REQUIRED",
+      "observed": "HTTPS_ORIGIN_REQUIRED",
+      "status": "PASS"
+    }
+  ],
+  "requestScopedClient": {
+    "simultaneousClients": 32,
+    "distinctClientObjects": 32,
+    "distinctCookieJars": 32,
+    "sharedSessionStateObserved": false
+  },
+  "cookiePolicy": {
+    "officialDefaults": {
+      "path": "/",
+      "sameSite": "lax",
+      "httpOnly": false,
+      "secure": "UNSET_BY_DEFAULT",
+      "maxAgeSeconds": 34560000
+    },
+    "productionOverride": {
+      "secure": true,
+      "sameSite": "lax",
+      "httpOnly": false
+    },
+    "nextResponseSerialization": {
+      "path": true,
+      "sameSiteLax": true,
+      "secure": true,
+      "httpOnly": false
+    }
+  },
+  "cachePolicy": {
+    "Cache-Control": "private, no-cache, no-store, must-revalidate, max-age=0",
+    "CDN-Cache-Control": "private, no-store",
+    "Vercel-CDN-Cache-Control": "private, no-store",
+    "Expires": "0",
+    "Pragma": "no-cache",
+    "Vary": "Cookie"
+  },
+  "csrf": {
+    "routeHandlerCases": [
+      {
+        "id": "valid-origin-host",
+        "expected": "ALLOWED",
+        "observed": "ALLOWED",
+        "status": "PASS"
+      },
+      {
+        "id": "valid-forwarded-host",
+        "expected": "ALLOWED",
+        "observed": "ALLOWED",
+        "status": "PASS"
+      },
+      {
+        "id": "get-never-mutates",
+        "expected": "MUTATION_METHOD_REQUIRED",
+        "observed": "MUTATION_METHOD_REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "origin-required",
+        "expected": "ORIGIN_REQUIRED",
+        "observed": "ORIGIN_REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "cross-site-origin",
+        "expected": "ORIGIN_NOT_ALLOWED",
+        "observed": "ORIGIN_NOT_ALLOWED",
+        "status": "PASS"
+      },
+      {
+        "id": "host-injection",
+        "expected": "HOST_NOT_ALLOWED",
+        "observed": "HOST_NOT_ALLOWED",
+        "status": "PASS"
+      },
+      {
+        "id": "origin-host-mismatch",
+        "expected": "ORIGIN_HOST_MISMATCH",
+        "observed": "ORIGIN_HOST_MISMATCH",
+        "status": "PASS"
+      },
+      {
+        "id": "https-required-production",
+        "expected": "HTTPS_ORIGIN_REQUIRED",
+        "observed": "HTTPS_ORIGIN_REQUIRED",
+        "status": "PASS"
+      }
+    ],
+    "nextServerActions": {
+      "mismatchedOriginHostAborted": true,
+      "missingOriginRejected": false,
+      "missingOriginBehavior": "warning and allow",
+      "defaultFetchCache": "default-no-store",
+      "applicationRouteHandlerPolicyIsStricter": true
+    }
+  },
+  "authnAuthz": {
+    "serverRevalidationMethod": "auth.getUser()",
+    "getSessionUsedForAuthorization": false,
+    "businessAuthorizationSeparate": true,
+    "mismatchFailsClosed": true
+  },
+  "browserBoundary": {
+    "authOnlyWrapper": true,
+    "domainTableApiCalls": 0,
+    "serviceRoleReferenced": false
+  }
+}

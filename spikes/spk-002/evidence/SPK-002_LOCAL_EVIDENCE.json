@@ -1,0 +1,1391 @@
+{
+  "result": "LOCAL_PASS_HOSTED_BLOCKED",
+  "generatedAt": "2026-08-22T20:08:44.407Z",
+  "authority": "Supabase CLI migration up --db-url",
+  "windowsHarnessWorkaround": "subst maps the same workspace to an ASCII drive path for initdb",
+  "cycles": [
+    {
+      "cycle": 1,
+      "databaseDir": ".tmp\\postgres-cycle-1",
+      "migration": {
+        "command": "supabase migration up --db-url <redacted-db-url> --include-all",
+        "stdout": "{\"applied\":[\"C:\\\\Users\\\\Usuário\\\\OneDrive - unb.br\\\\Documentos\\\\ChatGPT\\\\saas-agendamento\\\\spikes\\\\spk-002\\\\supabase\\\\migrations\\\\20260822190000_spk002_app_private_lab.sql\"],\"message\":\"Migrations applied\"}",
+        "stderr": "Connecting to remote database...\nApplying migration 20260822190000_spk002_app_private_lab.sql..."
+      },
+      "migrationHistory": [
+        {
+          "version": "20260822190000",
+          "name": "spk002_app_private_lab"
+        }
+      ],
+      "managedSchemasUnchanged": true,
+      "managedSchemaEvidenceKind": "controlled local sentinels; not a real Supabase Auth/Storage stack",
+      "managedBefore": {
+        "schemas": [
+          {
+            "oid": "16384",
+            "schema_name": "auth",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16385",
+            "schema_name": "storage",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "relations": [
+          {
+            "oid": "16386",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16393",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16395",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16402",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "columns": [
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          }
+        ],
+        "localSentinels": [
+          {
+            "schema_name": "auth",
+            "id": 1,
+            "guard_value": "auth-unchanged"
+          },
+          {
+            "schema_name": "storage",
+            "id": 1,
+            "guard_value": "storage-unchanged"
+          }
+        ]
+      },
+      "managedAfter": {
+        "schemas": [
+          {
+            "oid": "16384",
+            "schema_name": "auth",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16385",
+            "schema_name": "storage",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "relations": [
+          {
+            "oid": "16386",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16393",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16395",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16402",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "columns": [
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          }
+        ],
+        "localSentinels": [
+          {
+            "schema_name": "auth",
+            "id": 1,
+            "guard_value": "auth-unchanged"
+          },
+          {
+            "schema_name": "storage",
+            "id": 1,
+            "guard_value": "storage-unchanged"
+          }
+        ]
+      },
+      "schemaFingerprint": {
+        "sha256": "a6dd7fde7cb1702aaee6d592b55a2f20740cd0f13ac4e357ec74f01de94d8884",
+        "objects": [
+          {
+            "object_kind": "column",
+            "parent_name": "business",
+            "object_order": "1",
+            "definition": "id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "business",
+            "object_order": "2",
+            "definition": "name:text:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "business",
+            "object_order": "3",
+            "definition": "created_at:timestamp with time zone:true:now()"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "1",
+            "definition": "id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "2",
+            "definition": "business_id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "3",
+            "definition": "occupied_period:tstzrange:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "4",
+            "definition": "released_at:timestamp with time zone:false:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "5",
+            "definition": "created_at:timestamp with time zone:true:now()"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "transaction_probe",
+            "object_order": "1",
+            "definition": "id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "transaction_probe",
+            "object_order": "2",
+            "definition": "note:text:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "transaction_probe",
+            "object_order": "3",
+            "definition": "created_at:timestamp with time zone:true:now()"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_created_at_not_null",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_id_not_null",
+            "definition": "NOT NULL id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_name_not_null",
+            "definition": "NOT NULL name"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_business_id_business_id_fk",
+            "definition": "FOREIGN KEY (business_id) REFERENCES app_private.business(id) ON DELETE RESTRICT"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_business_id_not_null",
+            "definition": "NOT NULL business_id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_created_at_not_null",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_id_not_null",
+            "definition": "NOT NULL id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_no_overlap",
+            "definition": "EXCLUDE USING gist (business_id WITH =, occupied_period WITH &&) WHERE (released_at IS NULL)"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_occupied_period_not_null",
+            "definition": "NOT NULL occupied_period"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_period_is_half_open",
+            "definition": "CHECK (NOT isempty(occupied_period) AND lower_inc(occupied_period) AND NOT upper_inc(occupied_period) AND lower(occupied_period) < upper(occupied_period))"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_created_at_not_null",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_id_not_null",
+            "definition": "NOT NULL id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_note_not_null",
+            "definition": "NOT NULL note"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "business",
+            "object_order": "business_name_idx",
+            "definition": "CREATE INDEX business_name_idx ON app_private.business USING btree (name)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "business",
+            "object_order": "business_pkey",
+            "definition": "CREATE UNIQUE INDEX business_pkey ON app_private.business USING btree (id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_business_idx",
+            "definition": "CREATE INDEX schedule_occupancy_business_idx ON app_private.schedule_occupancy USING btree (business_id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_no_overlap",
+            "definition": "CREATE INDEX schedule_occupancy_no_overlap ON app_private.schedule_occupancy USING gist (business_id, occupied_period) WHERE (released_at IS NULL)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_pkey",
+            "definition": "CREATE UNIQUE INDEX schedule_occupancy_pkey ON app_private.schedule_occupancy USING btree (id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_pkey",
+            "definition": "CREATE UNIQUE INDEX transaction_probe_pkey ON app_private.transaction_probe USING btree (id)"
+          }
+        ]
+      },
+      "drift": {
+        "expected": [
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "name",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "business_id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "occupied_period",
+            "sqlType": "tstzrange",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "released_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": false,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "note",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          }
+        ],
+        "actual": [
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "name",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "business_id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "occupied_period",
+            "sqlType": "tstzrange",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "released_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": false,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "note",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          }
+        ],
+        "matched": true
+      },
+      "versions": {
+        "postgres": "18.4",
+        "btree_gist": "1.8"
+      },
+      "isolation": {
+        "drizzleSchemaFilter": [
+          "app_private"
+        ],
+        "migrationTargetsAuthOrStorage": false
+      },
+      "experiments": "deferred-to-cycle-2"
+    },
+    {
+      "cycle": 2,
+      "databaseDir": ".tmp\\postgres-cycle-2",
+      "migration": {
+        "command": "supabase migration up --db-url <redacted-db-url> --include-all",
+        "stdout": "{\"applied\":[\"C:\\\\Users\\\\Usuário\\\\OneDrive - unb.br\\\\Documentos\\\\ChatGPT\\\\saas-agendamento\\\\spikes\\\\spk-002\\\\supabase\\\\migrations\\\\20260822190000_spk002_app_private_lab.sql\"],\"message\":\"Migrations applied\"}",
+        "stderr": "Connecting to remote database...\nApplying migration 20260822190000_spk002_app_private_lab.sql..."
+      },
+      "migrationHistory": [
+        {
+          "version": "20260822190000",
+          "name": "spk002_app_private_lab"
+        }
+      ],
+      "managedSchemasUnchanged": true,
+      "managedSchemaEvidenceKind": "controlled local sentinels; not a real Supabase Auth/Storage stack",
+      "managedBefore": {
+        "schemas": [
+          {
+            "oid": "16384",
+            "schema_name": "auth",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16385",
+            "schema_name": "storage",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "relations": [
+          {
+            "oid": "16386",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16393",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16395",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16402",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "columns": [
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          }
+        ],
+        "localSentinels": [
+          {
+            "schema_name": "auth",
+            "id": 1,
+            "guard_value": "auth-unchanged"
+          },
+          {
+            "schema_name": "storage",
+            "id": 1,
+            "guard_value": "storage-unchanged"
+          }
+        ]
+      },
+      "managedAfter": {
+        "schemas": [
+          {
+            "oid": "16384",
+            "schema_name": "auth",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16385",
+            "schema_name": "storage",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "relations": [
+          {
+            "oid": "16386",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16393",
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16395",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "relkind": "r",
+            "owner_name": "postgres",
+            "acl": ""
+          },
+          {
+            "oid": "16402",
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "relkind": "i",
+            "owner_name": "postgres",
+            "acl": ""
+          }
+        ],
+        "columns": [
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "auth",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard",
+            "attnum": 2,
+            "column_name": "guard_value",
+            "sql_type": "text",
+            "attnotnull": true,
+            "default_expression": ""
+          },
+          {
+            "schema_name": "storage",
+            "relation_name": "_spk_002_guard_pkey",
+            "attnum": 1,
+            "column_name": "id",
+            "sql_type": "integer",
+            "attnotnull": false,
+            "default_expression": ""
+          }
+        ],
+        "localSentinels": [
+          {
+            "schema_name": "auth",
+            "id": 1,
+            "guard_value": "auth-unchanged"
+          },
+          {
+            "schema_name": "storage",
+            "id": 1,
+            "guard_value": "storage-unchanged"
+          }
+        ]
+      },
+      "schemaFingerprint": {
+        "sha256": "a6dd7fde7cb1702aaee6d592b55a2f20740cd0f13ac4e357ec74f01de94d8884",
+        "objects": [
+          {
+            "object_kind": "column",
+            "parent_name": "business",
+            "object_order": "1",
+            "definition": "id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "business",
+            "object_order": "2",
+            "definition": "name:text:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "business",
+            "object_order": "3",
+            "definition": "created_at:timestamp with time zone:true:now()"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "1",
+            "definition": "id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "2",
+            "definition": "business_id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "3",
+            "definition": "occupied_period:tstzrange:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "4",
+            "definition": "released_at:timestamp with time zone:false:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "schedule_occupancy",
+            "object_order": "5",
+            "definition": "created_at:timestamp with time zone:true:now()"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "transaction_probe",
+            "object_order": "1",
+            "definition": "id:uuid:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "transaction_probe",
+            "object_order": "2",
+            "definition": "note:text:true:"
+          },
+          {
+            "object_kind": "column",
+            "parent_name": "transaction_probe",
+            "object_order": "3",
+            "definition": "created_at:timestamp with time zone:true:now()"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_created_at_not_null",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_id_not_null",
+            "definition": "NOT NULL id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_name_not_null",
+            "definition": "NOT NULL name"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "business",
+            "object_order": "business_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_business_id_business_id_fk",
+            "definition": "FOREIGN KEY (business_id) REFERENCES app_private.business(id) ON DELETE RESTRICT"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_business_id_not_null",
+            "definition": "NOT NULL business_id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_created_at_not_null",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_id_not_null",
+            "definition": "NOT NULL id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_no_overlap",
+            "definition": "EXCLUDE USING gist (business_id WITH =, occupied_period WITH &&) WHERE (released_at IS NULL)"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_occupied_period_not_null",
+            "definition": "NOT NULL occupied_period"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_period_is_half_open",
+            "definition": "CHECK (NOT isempty(occupied_period) AND lower_inc(occupied_period) AND NOT upper_inc(occupied_period) AND lower(occupied_period) < upper(occupied_period))"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_created_at_not_null",
+            "definition": "NOT NULL created_at"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_id_not_null",
+            "definition": "NOT NULL id"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_note_not_null",
+            "definition": "NOT NULL note"
+          },
+          {
+            "object_kind": "constraint",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_pkey",
+            "definition": "PRIMARY KEY (id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "business",
+            "object_order": "business_name_idx",
+            "definition": "CREATE INDEX business_name_idx ON app_private.business USING btree (name)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "business",
+            "object_order": "business_pkey",
+            "definition": "CREATE UNIQUE INDEX business_pkey ON app_private.business USING btree (id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_business_idx",
+            "definition": "CREATE INDEX schedule_occupancy_business_idx ON app_private.schedule_occupancy USING btree (business_id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_no_overlap",
+            "definition": "CREATE INDEX schedule_occupancy_no_overlap ON app_private.schedule_occupancy USING gist (business_id, occupied_period) WHERE (released_at IS NULL)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "schedule_occupancy",
+            "object_order": "schedule_occupancy_pkey",
+            "definition": "CREATE UNIQUE INDEX schedule_occupancy_pkey ON app_private.schedule_occupancy USING btree (id)"
+          },
+          {
+            "object_kind": "index",
+            "parent_name": "transaction_probe",
+            "object_order": "transaction_probe_pkey",
+            "definition": "CREATE UNIQUE INDEX transaction_probe_pkey ON app_private.transaction_probe USING btree (id)"
+          }
+        ]
+      },
+      "drift": {
+        "expected": [
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "name",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "business_id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "occupied_period",
+            "sqlType": "tstzrange",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "released_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": false,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "note",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          }
+        ],
+        "actual": [
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "business",
+            "columnName": "name",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "business_id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "occupied_period",
+            "sqlType": "tstzrange",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "schedule_occupancy",
+            "columnName": "released_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": false,
+            "hasDefault": false,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "created_at",
+            "sqlType": "timestamp with time zone",
+            "notNull": true,
+            "hasDefault": true,
+            "primaryKey": false
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "id",
+            "sqlType": "uuid",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": true
+          },
+          {
+            "schemaName": "app_private",
+            "tableName": "transaction_probe",
+            "columnName": "note",
+            "sqlType": "text",
+            "notNull": true,
+            "hasDefault": false,
+            "primaryKey": false
+          }
+        ],
+        "matched": true
+      },
+      "versions": {
+        "postgres": "18.4",
+        "btree_gist": "1.8"
+      },
+      "isolation": {
+        "drizzleSchemaFilter": [
+          "app_private"
+        ],
+        "migrationTargetsAuthOrStorage": false
+      },
+      "experiments": {
+        "environment": "embedded-postgres",
+        "drizzleCrud": "PASS",
+        "parameterizedSql": "PASS",
+        "adjacentHalfOpenRanges": "PASS",
+        "releasedOverlapIgnored": "PASS",
+        "exclusionViolation": {
+          "status": "PASS",
+          "sqlstate": "23P01",
+          "constraint": "schedule_occupancy_no_overlap"
+        },
+        "rollbackIntegrity": "PASS",
+        "connectionRecovery": "PASS",
+        "consecutiveTransactions": [
+          "commit",
+          "rollback",
+          "commit"
+        ],
+        "rowLock": {
+          "status": "PASS",
+          "sqlstate": "55P03"
+        },
+        "namedPreparedStatements": [],
+        "advancedPostgres": {
+          "postgres_version": "18.4",
+          "extension_version": "1.8",
+          "constraint_definition": "EXCLUDE USING gist (business_id WITH =, occupied_period WITH &&) WHERE (released_at IS NULL)",
+          "exclusion_index_definition": "CREATE INDEX schedule_occupancy_no_overlap ON app_private.schedule_occupancy USING gist (business_id, occupied_period) WHERE (released_at IS NULL)"
+        },
+        "poolLifecycle": {
+          "beforeClose": {
+            "configuredMax": 2,
+            "totalCount": 2,
+            "idleCount": 2,
+            "waitingCount": 0
+          },
+          "queryRejectedAfterClose": true
+        }
+      }
+    }
+  ],
+  "deterministicFingerprint": "a6dd7fde7cb1702aaee6d592b55a2f20740cd0f13ac4e357ec74f01de94d8884"
+}

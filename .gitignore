@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules/
+.next/
+.next-e2e/
+out/
+coverage/
+playwright-report/
+test-results/
+.tmp/
+
+# Environment and local credentials
+.env
+.env.*
+!.env.example
+
+# Supabase local state and generated candidates
+.supabase/
+.supabase-cli-home/
+supabase/.branches/
+supabase/.temp/
+drizzle-candidate/
+
+# Tooling and editor state
+*.tsbuildinfo
+.eslintcache
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# Local PostgreSQL test artifacts
+.postgres-data/
+
+.pnpm-store/
+
+.migration-generator/

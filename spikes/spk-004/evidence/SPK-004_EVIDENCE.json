@@ -1,0 +1,444 @@
+{
+  "spike": "SPK-004",
+  "result": "PASS",
+  "generatedAt": "2026-08-23T16:39:56.374194738Z",
+  "environment": {
+    "operatingSystem": "win32 x64",
+    "node": "v24.19.0",
+    "v8": "13.6.233.17-node.51",
+    "icu": "78.3",
+    "cldr": "48.0",
+    "tzdata": "2026b",
+    "polyfill": "0.5.1",
+    "nativeTemporalDefault": "UNAVAILABLE",
+    "nativeTemporalExperimental": "EXPERIMENTAL_FLAG"
+  },
+  "caseMatrix": [
+    {
+      "id": "no-dst-phoenix-winter",
+      "inputLocal": "2025-01-15T09:00",
+      "timeZone": "America/Phoenix",
+      "classification": "UNIQUE",
+      "offset": "-07:00",
+      "instantUtc": "2025-01-15T16:00:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "unique instant with fixed -07:00 offset",
+      "observedBehavior": "UNIQUE; selected 2025-01-15T16:00:00Z at -07:00",
+      "status": "PASS"
+    },
+    {
+      "id": "no-dst-phoenix-summer",
+      "inputLocal": "2025-07-15T09:00",
+      "timeZone": "America/Phoenix",
+      "classification": "UNIQUE",
+      "offset": "-07:00",
+      "instantUtc": "2025-07-15T16:00:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "same offset in summer for a no-DST zone",
+      "observedBehavior": "UNIQUE; selected 2025-07-15T16:00:00Z at -07:00",
+      "status": "PASS"
+    },
+    {
+      "id": "half-hour-offset-kolkata",
+      "inputLocal": "2025-06-15T09:00",
+      "timeZone": "Asia/Calcutta",
+      "classification": "UNIQUE",
+      "offset": "+05:30",
+      "instantUtc": "2025-06-15T03:30:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "preserve a non-whole-hour IANA offset",
+      "observedBehavior": "UNIQUE; selected 2025-06-15T03:30:00Z at +05:30",
+      "status": "PASS"
+    },
+    {
+      "id": "new-york-before-spring-forward",
+      "inputLocal": "2025-03-09T01:59",
+      "timeZone": "America/New_York",
+      "classification": "UNIQUE",
+      "offset": "-05:00",
+      "instantUtc": "2025-03-09T06:59:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "last pre-transition minutes use EST",
+      "observedBehavior": "UNIQUE; selected 2025-03-09T06:59:00Z at -05:00",
+      "status": "PASS"
+    },
+    {
+      "id": "new-york-nonexistent",
+      "inputLocal": "2025-03-09T02:30",
+      "timeZone": "America/New_York",
+      "classification": "NONEXISTENT",
+      "offset": null,
+      "instantUtc": null,
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "generate no slot and never shift to 03:30",
+      "observedBehavior": "slot omitted; no UTC instant produced",
+      "status": "PASS"
+    },
+    {
+      "id": "new-york-after-spring-forward",
+      "inputLocal": "2025-03-09T03:00",
+      "timeZone": "America/New_York",
+      "classification": "UNIQUE",
+      "offset": "-04:00",
+      "instantUtc": "2025-03-09T07:00:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "first post-transition hour uses EDT",
+      "observedBehavior": "UNIQUE; selected 2025-03-09T07:00:00Z at -04:00",
+      "status": "PASS"
+    },
+    {
+      "id": "new-york-ambiguous-first",
+      "inputLocal": "2025-11-02T01:30",
+      "timeZone": "America/New_York",
+      "classification": "AMBIGUOUS_FIRST",
+      "offset": "-04:00",
+      "instantUtc": "2025-11-02T05:30:00Z",
+      "alternativeInstantUtc": "2025-11-02T06:30:00Z",
+      "expectedBehavior": "choose the chronologically first occurrence",
+      "observedBehavior": "AMBIGUOUS_FIRST; selected 2025-11-02T05:30:00Z at -04:00",
+      "status": "PASS"
+    },
+    {
+      "id": "new-york-after-fall-back",
+      "inputLocal": "2025-11-02T02:00",
+      "timeZone": "America/New_York",
+      "classification": "UNIQUE",
+      "offset": "-05:00",
+      "instantUtc": "2025-11-02T07:00:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "post-transition hour uses EST",
+      "observedBehavior": "UNIQUE; selected 2025-11-02T07:00:00Z at -05:00",
+      "status": "PASS"
+    },
+    {
+      "id": "berlin-nonexistent",
+      "inputLocal": "2025-03-30T02:30",
+      "timeZone": "Europe/Berlin",
+      "classification": "NONEXISTENT",
+      "offset": null,
+      "instantUtc": null,
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "European spring gap also generates no slot",
+      "observedBehavior": "slot omitted; no UTC instant produced",
+      "status": "PASS"
+    },
+    {
+      "id": "berlin-ambiguous-first",
+      "inputLocal": "2025-10-26T02:30",
+      "timeZone": "Europe/Berlin",
+      "classification": "AMBIGUOUS_FIRST",
+      "offset": "+02:00",
+      "instantUtc": "2025-10-26T00:30:00Z",
+      "alternativeInstantUtc": "2025-10-26T01:30:00Z",
+      "expectedBehavior": "choose the first European fall-back occurrence",
+      "observedBehavior": "AMBIGUOUS_FIRST; selected 2025-10-26T00:30:00Z at +02:00",
+      "status": "PASS"
+    },
+    {
+      "id": "midnight-year-boundary-kiritimati",
+      "inputLocal": "2026-01-01T00:15",
+      "timeZone": "Pacific/Kiritimati",
+      "classification": "UNIQUE",
+      "offset": "+14:00",
+      "instantUtc": "2025-12-31T10:15:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "local new year maps to the previous UTC year",
+      "observedBehavior": "UNIQUE; selected 2025-12-31T10:15:00Z at +14:00",
+      "status": "PASS"
+    },
+    {
+      "id": "month-boundary-new-york",
+      "inputLocal": "2025-03-01T00:00",
+      "timeZone": "America/New_York",
+      "classification": "UNIQUE",
+      "offset": "-05:00",
+      "instantUtc": "2025-03-01T05:00:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "local midnight remains deterministic at a month boundary",
+      "observedBehavior": "UNIQUE; selected 2025-03-01T05:00:00Z at -05:00",
+      "status": "PASS"
+    },
+    {
+      "id": "day-after-spring-transition",
+      "inputLocal": "2025-03-10T00:00",
+      "timeZone": "America/New_York",
+      "classification": "UNIQUE",
+      "offset": "-04:00",
+      "instantUtc": "2025-03-10T04:00:00Z",
+      "alternativeInstantUtc": null,
+      "expectedBehavior": "midnight after DST uses the new offset",
+      "observedBehavior": "UNIQUE; selected 2025-03-10T04:00:00Z at -04:00",
+      "status": "PASS"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "deterministic-case-matrix",
+      "expected": "All no-DST, DST, offset, midnight, month, and year vectors match fixed expectations",
+      "observed": "13 case rows passed against tzdata 2026b",
+      "status": "PASS"
+    },
+    {
+      "id": "nonexistent-local-times",
+      "expected": "Spring-forward gaps produce no slot and are never silently shifted",
+      "observed": "New York and Berlin gaps returned NONEXISTENT, null instant, and explicit rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "ambiguous-first-occurrence",
+      "expected": "Automatic generation selects the chronologically first occurrence",
+      "observed": "New York 01:30 selected 05:30Z/-04:00 before alternative 06:30Z/-05:00",
+      "status": "PASS"
+    },
+    {
+      "id": "local-utc-local-round-trip",
+      "expected": "The selected instant round-trips to the confirmed local date/time and offset",
+      "observed": "2025-11-02T01:30:00-04:00 -> 2025-11-02T05:30:00Z -> same local fields",
+      "status": "PASS"
+    },
+    {
+      "id": "confirmation-snapshot",
+      "expected": "UTC, IANA zone, local fields, and offset reconstruct the confirmed presentation",
+      "observed": "2025-11-02 01:30:00 -04:00 [America/New_York] reconstructs 2025-11-02T05:30:00Z",
+      "status": "PASS"
+    },
+    {
+      "id": "iana-validation",
+      "expected": "Invalid and fixed-offset identifiers are rejected; valid IANA zones are accepted",
+      "observed": "Four invalid inputs rejected; America/New_York accepted",
+      "status": "PASS"
+    },
+    {
+      "id": "elapsed-duration-across-offset",
+      "expected": "Service duration is elapsed minutes even when the wall-clock offset changes",
+      "observed": "120 minutes stayed 120 across spring-forward and fall-back",
+      "status": "PASS"
+    },
+    {
+      "id": "half-open-intervals",
+      "expected": "Adjacent [) UTC intervals do not overlap, while a one-minute crossing does",
+      "observed": "[05:30,06:00) and [06:00,06:30) were adjacent; [05:59,06:01) overlapped",
+      "status": "PASS"
+    },
+    {
+      "id": "timezone-change-blocked",
+      "expected": "A future confirmed Appointment blocks Business timezone change",
+      "observed": "Change rejected with the exact conflicting appointment id; version remained 7",
+      "status": "PASS"
+    },
+    {
+      "id": "timezone-change-without-future-confirmed",
+      "expected": "Change increments availability version, preserves history, and reinterprets future local rules",
+      "observed": "Version 7->8; appointment JSON unchanged; future 09:00 moved from 14:00Z to 17:00Z",
+      "status": "PASS"
+    },
+    {
+      "id": "server-only-conversion-boundary",
+      "expected": "Local-to-UTC conversion exists only in server code and never uses process-local Date",
+      "observed": "Browser module only formats stored snapshots; server module uses explicit Temporal zones",
+      "status": "PASS"
+    },
+    {
+      "id": "process-timezone-independence",
+      "expected": "All business vectors are byte-equivalent under three process TZ settings",
+      "observed": "Identical SHA-256 883147695c3b5c0ca2bacc6ad799568da90c4128411138af5bb81570fcac28a2 under UTC, America/Los_Angeles, Asia/Tokyo",
+      "status": "PASS"
+    },
+    {
+      "id": "native-polyfill-comparison",
+      "expected": "Default runtime absence is explicit; experimental native semantics match the polyfill core vectors",
+      "observed": "Native requires --harmony-temporal; semantic outputs matched; RangeError messages differed",
+      "status": "PASS"
+    }
+  ],
+  "snapshotEvidence": {
+    "snapshot": {
+      "scheduledStartAtUtc": "2025-11-02T05:30:00Z",
+      "timezoneSnapshot": "America/New_York",
+      "localDateSnapshot": "2025-11-02",
+      "localTimeSnapshot": "01:30:00",
+      "utcOffsetMinutesSnapshot": -240
+    },
+    "reconstructedInstantUtc": "2025-11-02T05:30:00Z",
+    "presentation": "2025-11-02 01:30:00 -04:00 [America/New_York]"
+  },
+  "durationEvidence": {
+    "springDuration": {
+      "startInstantUtc": "2025-03-09T06:30:00Z",
+      "endInstantUtc": "2025-03-09T08:30:00Z",
+      "elapsedMinutes": 120,
+      "endLocal": "2025-03-09T04:30:00-04:00[America/New_York]"
+    },
+    "fallDuration": {
+      "startInstantUtc": "2025-11-02T04:30:00Z",
+      "endInstantUtc": "2025-11-02T06:30:00Z",
+      "elapsedMinutes": 120,
+      "endLocal": "2025-11-02T01:30:00-05:00[America/New_York]"
+    }
+  },
+  "intervalEvidence": {
+    "adjacentOverlap": false,
+    "crossingOverlap": true
+  },
+  "timezoneChangeEvidence": {
+    "fixedNowUtc": "2026-01-01T00:00:00Z",
+    "blocked": {
+      "outcome": "BLOCKED_FUTURE_CONFIRMED",
+      "conflicts": [
+        "future-confirmed"
+      ],
+      "businessUnchanged": true
+    },
+    "allowed": {
+      "outcome": "CHANGED",
+      "beforeTimezone": "America/New_York",
+      "afterTimezone": "America/Los_Angeles",
+      "beforeVersion": 7,
+      "afterVersion": 8,
+      "appointmentRecordsUnchanged": true,
+      "historicalInstantUtc": "2025-06-01T13:00:00Z",
+      "futureRuleOldTimezoneUtc": "2030-01-15T14:00:00Z",
+      "futureRuleNewTimezoneUtc": "2030-01-15T17:00:00Z"
+    }
+  },
+  "processTimezoneIndependence": {
+    "processTimeZones": [
+      "UTC",
+      "America/Los_Angeles",
+      "Asia/Tokyo"
+    ],
+    "hashes": {
+      "UTC": "883147695c3b5c0ca2bacc6ad799568da90c4128411138af5bb81570fcac28a2",
+      "America/Los_Angeles": "883147695c3b5c0ca2bacc6ad799568da90c4128411138af5bb81570fcac28a2",
+      "Asia/Tokyo": "883147695c3b5c0ca2bacc6ad799568da90c4128411138af5bb81570fcac28a2"
+    },
+    "byteEquivalent": true
+  },
+  "nativeComparison": {
+    "runtimeDefault": {
+      "availability": "UNAVAILABLE",
+      "globalType": "undefined"
+    },
+    "runtimeExperimental": {
+      "availability": "EXPERIMENTAL_FLAG",
+      "globalType": "object",
+      "namespaceKeys": [],
+      "vectors": {
+        "gap": {
+          "earlier": {
+            "instantUtc": "2025-03-09T06:30:00Z",
+            "localRoundTrip": "2025-03-09T01:30:00",
+            "offset": "-05:00"
+          },
+          "later": {
+            "instantUtc": "2025-03-09T07:30:00Z",
+            "localRoundTrip": "2025-03-09T03:30:00",
+            "offset": "-04:00"
+          },
+          "compatible": {
+            "instantUtc": "2025-03-09T07:30:00Z",
+            "localRoundTrip": "2025-03-09T03:30:00",
+            "offset": "-04:00"
+          },
+          "reject": {
+            "error": "RangeError",
+            "message": "Invalid time value for Temporal ..\\..\\deps\\v8\\src\\objects\\js-temporal-objects.cc:1798"
+          }
+        },
+        "fold": {
+          "earlier": {
+            "instantUtc": "2025-11-02T05:30:00Z",
+            "localRoundTrip": "2025-11-02T01:30:00",
+            "offset": "-04:00"
+          },
+          "later": {
+            "instantUtc": "2025-11-02T06:30:00Z",
+            "localRoundTrip": "2025-11-02T01:30:00",
+            "offset": "-05:00"
+          },
+          "compatible": {
+            "instantUtc": "2025-11-02T05:30:00Z",
+            "localRoundTrip": "2025-11-02T01:30:00",
+            "offset": "-04:00"
+          },
+          "reject": {
+            "error": "RangeError",
+            "message": "Invalid time value for Temporal ..\\..\\deps\\v8\\src\\objects\\js-temporal-objects.cc:1791"
+          }
+        }
+      }
+    },
+    "polyfill": {
+      "availability": "POLYFILL_IMPORT",
+      "globalType": "undefined",
+      "namespaceKeys": [
+        "Duration",
+        "Instant",
+        "Now",
+        "PlainDate",
+        "PlainDateTime",
+        "PlainMonthDay",
+        "PlainTime",
+        "PlainYearMonth",
+        "ZonedDateTime"
+      ],
+      "vectors": {
+        "gap": {
+          "earlier": {
+            "instantUtc": "2025-03-09T06:30:00Z",
+            "localRoundTrip": "2025-03-09T01:30:00",
+            "offset": "-05:00"
+          },
+          "later": {
+            "instantUtc": "2025-03-09T07:30:00Z",
+            "localRoundTrip": "2025-03-09T03:30:00",
+            "offset": "-04:00"
+          },
+          "compatible": {
+            "instantUtc": "2025-03-09T07:30:00Z",
+            "localRoundTrip": "2025-03-09T03:30:00",
+            "offset": "-04:00"
+          },
+          "reject": {
+            "error": "RangeError",
+            "message": "multiple instants found"
+          }
+        },
+        "fold": {
+          "earlier": {
+            "instantUtc": "2025-11-02T05:30:00Z",
+            "localRoundTrip": "2025-11-02T01:30:00",
+            "offset": "-04:00"
+          },
+          "later": {
+            "instantUtc": "2025-11-02T06:30:00Z",
+            "localRoundTrip": "2025-11-02T01:30:00",
+            "offset": "-05:00"
+          },
+          "compatible": {
+            "instantUtc": "2025-11-02T05:30:00Z",
+            "localRoundTrip": "2025-11-02T01:30:00",
+            "offset": "-04:00"
+          },
+          "reject": {
+            "error": "RangeError",
+            "message": "multiple instants found"
+          }
+        }
+      }
+    },
+    "semanticMatchUnderExperimentalFlag": true,
+    "differences": [
+      "globalThis.Temporal is undefined in the default Node runtime",
+      "native Temporal requires the in-progress --harmony-temporal flag",
+      "the polyfill is imported explicitly and does not install a global",
+      "native and polyfill RangeError messages differ; policy relies only on classification/round-trip, not message text"
+    ],
+    "criticalIncompatibility": false
+  },
+  "businessTimeSources": {
+    "explicitIanaTimeZoneOnly": true,
+    "processLocalDateUsed": false,
+    "fixedClockUsedForPolicyTests": true
+  }
+}
