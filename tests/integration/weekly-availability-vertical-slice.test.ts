@@ -34,6 +34,17 @@ databaseSuite("Sprint 2 weekly availability on real PostgreSQL", () => {
   });
 
   beforeEach(async () => {
+    await pool.query(`
+      begin;
+      update app_private.blocked_period set active = false where active;
+      update app_private.schedule_occupancy
+         set released_at = coalesce(released_at, clock_timestamp());
+      commit;
+    `);
+    await pool.query("delete from app_private.schedule_occupancy");
+    await pool.query("delete from app_private.blocked_period");
+    await pool.query("delete from app_private.exception_working_window");
+    await pool.query("delete from app_private.date_availability_exception");
     await pool.query("delete from app_private.weekly_break");
     await pool.query("delete from app_private.weekly_working_window");
     await pool.query("delete from app_private.service");

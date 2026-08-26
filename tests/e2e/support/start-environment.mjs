@@ -38,6 +38,17 @@ try {
     alter role ${RUNTIME_LOGIN} login inherit password '${RUNTIME_PASSWORD}';
     grant barber_runtime to ${RUNTIME_LOGIN};
   `);
+  await adminPool.query(`
+    begin;
+    update app_private.blocked_period set active = false where active;
+    update app_private.schedule_occupancy
+       set released_at = coalesce(released_at, clock_timestamp());
+    commit;
+  `);
+  await adminPool.query("delete from app_private.schedule_occupancy");
+  await adminPool.query("delete from app_private.blocked_period");
+  await adminPool.query("delete from app_private.exception_working_window");
+  await adminPool.query("delete from app_private.date_availability_exception");
   await adminPool.query("delete from app_private.weekly_break");
   await adminPool.query("delete from app_private.weekly_working_window");
   await adminPool.query("delete from app_private.service");

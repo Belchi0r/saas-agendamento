@@ -19,6 +19,7 @@ import {
   dateAvailabilityExceptions,
   exceptionWorkingWindows,
 } from "../database/schema";
+import { findPostgresError } from "../database/postgres-error";
 import type * as schema from "../database/schema";
 
 type AppDatabase = NodePgDatabase<typeof schema>;
@@ -83,17 +84,6 @@ function mapExceptionRows(
   }
 
   return [...mapped.values()];
-}
-
-function isPostgresError(
-  error: unknown,
-): error is Readonly<{ code: string; constraint?: string }> {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string"
-  );
 }
 
 export class PostgresDateAvailabilityRepository
@@ -182,17 +172,18 @@ export class PostgresDateAvailabilityRepository
         };
       });
     } catch (error) {
+      const postgresError = findPostgresError(error);
       if (error instanceof DateAvailabilityRuleError) {
         throw this.mapRuleError(error);
       }
-      if (isPostgresError(error) && error.code === "23505") {
+      if (postgresError?.code === "23505") {
         throw new ApplicationError(
           "DATE_EXCEPTION_ALREADY_EXISTS",
           "Já existe uma configuração especial para esta data.",
           409,
         );
       }
-      if (isPostgresError(error) && error.code === "23P01") {
+      if (postgresError?.code === "23P01") {
         throw new ApplicationError(
           "DATE_EXCEPTION_WINDOW_OVERLAP",
           "As faixas especiais não podem se sobrepor.",
@@ -216,14 +207,15 @@ export class PostgresDateAvailabilityRepository
         exception.version,
         exception.created_at,
         exception.updated_at,
-        window.id as window_id,
-        window.start_local_time::text,
-        window.end_local_time::text
+        working_window.id as window_id,
+        working_window.start_local_time::text,
+        working_window.end_local_time::text
       from app_private.date_availability_exception as exception
-      left join app_private.exception_working_window as window
-        on window.date_exception_id = exception.id
+      left join app_private.exception_working_window as working_window
+        on working_window.date_exception_id = exception.id
       where exception.business_id = ${this.scope.businessId}
-      order by exception.local_date, exception.id, window.start_local_time, window.id
+      order by exception.local_date, exception.id,
+               working_window.start_local_time, working_window.id
     `);
 
     return mapExceptionRows(result.rows as unknown as ExceptionJoinRow[]);

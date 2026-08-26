@@ -21,6 +21,7 @@ import {
   weeklyBreaks,
   weeklyWorkingWindows,
 } from "../database/schema";
+import { findPostgresError } from "../database/postgres-error";
 import type * as schema from "../database/schema";
 
 type AppDatabase = NodePgDatabase<typeof schema>;
@@ -86,15 +87,6 @@ function mapRuleError(error: WeeklyAvailabilityRuleError): ApplicationError {
         400,
       );
   }
-}
-
-function isPostgresError(error: unknown): error is Readonly<{ code: string }> {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string"
-  );
 }
 
 export class PostgresWeeklyAvailabilityRepository
@@ -253,7 +245,7 @@ export class PostgresWeeklyAvailabilityRepository
         throw mapRuleError(error);
       }
 
-      if (isPostgresError(error) && error.code === "23P01") {
+      if (findPostgresError(error)?.code === "23P01") {
         throw new ApplicationError(
           "WEEKLY_RANGE_OVERLAP",
           "Já existe uma faixa do mesmo tipo sobreposta neste dia.",

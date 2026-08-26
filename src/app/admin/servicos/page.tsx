@@ -83,6 +83,9 @@ export default async function AdminServicesPage() {
           <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/datas-especiais">
             Datas especiais
           </Link>
+          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/bloqueios">
+            Bloqueios
+          </Link>
         </nav>
       </header>
       <ServiceManager

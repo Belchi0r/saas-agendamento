@@ -2,6 +2,7 @@ import {
   boolean,
   char,
   check,
+  customType,
   date,
   foreignKey,
   index,
@@ -12,6 +13,7 @@ import {
   time,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -240,6 +242,93 @@ export const exceptionWorkingWindows = appPrivate.table(
     check(
       "exception_working_window_ordered",
       sql`${table.startLocalTime} < ${table.endLocalTime}`,
+    ),
+  ],
+);
+
+export const blockedPeriods = appPrivate.table(
+  "blocked_period",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "restrict" }),
+    startAt: timestamp("start_at", { withTimezone: true, mode: "date" }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true, mode: "date" }).notNull(),
+    localDateFrom: date("local_date_from", { mode: "string" }),
+    localDateTo: date("local_date_to", { mode: "string" }),
+    timezoneSnapshot: text("timezone_snapshot").notNull(),
+    privateReason: text("private_reason"),
+    active: boolean("active").notNull().default(true),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("blocked_period_business_scope_unique").on(
+      table.businessId,
+      table.id,
+    ),
+    index("blocked_period_business_start_end_idx")
+      .on(table.businessId, table.startAt, table.endAt)
+      .where(sql`${table.active}`),
+    check("blocked_period_ordered", sql`${table.startAt} < ${table.endAt}`),
+    check(
+      "blocked_period_date_snapshots_paired",
+      sql`(${table.localDateFrom} is null and ${table.localDateTo} is null)
+        or (${table.localDateFrom} is not null and ${table.localDateTo} is not null
+          and ${table.localDateFrom} <= ${table.localDateTo})`,
+    ),
+    check(
+      "blocked_period_timezone_snapshot_not_blank",
+      sql`btrim(${table.timezoneSnapshot}) <> ''`,
+    ),
+    check(
+      "blocked_period_private_reason_not_blank",
+      sql`${table.privateReason} is null or btrim(${table.privateReason}) <> ''`,
+    ),
+    check("blocked_period_version_positive", sql`${table.version} > 0`),
+  ],
+);
+
+const tstzrange = customType<{ data: string }>({
+  dataType() {
+    return "tstzrange";
+  },
+});
+
+export const scheduleOccupancies = appPrivate.table(
+  "schedule_occupancy",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "restrict" }),
+    blockedPeriodId: uuid("blocked_period_id").notNull(),
+    occupiedPeriod: tstzrange("occupied_period").notNull(),
+    releasedAt: timestamp("released_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: "schedule_occupancy_blocked_period_fk",
+      columns: [table.businessId, table.blockedPeriodId],
+      foreignColumns: [blockedPeriods.businessId, blockedPeriods.id],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    uniqueIndex("schedule_occupancy_blocked_period_unique").on(
+      table.blockedPeriodId,
+    ),
+    index("schedule_occupancy_business_released_idx").on(
+      table.businessId,
+      table.releasedAt,
     ),
   ],
 );

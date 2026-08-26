@@ -1,4 +1,5 @@
 import type { DateAvailabilityException } from "@/domain/availability/date-availability";
+import type { BlockedPeriod } from "@/domain/availability/blocked-period";
 import {
   isValidLocalDate,
   localTimeToSeconds,
@@ -28,7 +29,10 @@ export type AvailabilityCandidate = Readonly<{
 
 export type RejectedAvailabilityCandidate = Readonly<{
   startLocalTime: string;
-  reason: "NONEXISTENT_LOCAL_TIME" | "OUTSIDE_EFFECTIVE_WINDOW";
+  reason:
+    | "NONEXISTENT_LOCAL_TIME"
+    | "OUTSIDE_EFFECTIVE_WINDOW"
+    | "BLOCKED_PERIOD_CONFLICT";
 }>;
 
 export type CandidateAvailabilityResult = Readonly<{
@@ -50,6 +54,7 @@ export function calculateAvailabilityForCandidates(input: Readonly<{
   weeklyWorkingWindows: readonly WeeklyWorkingWindow[];
   weeklyBreaks: readonly WeeklyBreak[];
   dateException: DateAvailabilityException | null;
+  blockedPeriods: readonly BlockedPeriod[];
 }>): CandidateAvailabilityResult {
   if (
     !isValidLocalDate(input.localDate) ||
@@ -138,6 +143,25 @@ export function calculateAvailabilityForCandidates(input: Readonly<{
       continue;
     }
 
+    if (
+      input.blockedPeriods.some(
+        (blockedPeriod) =>
+          blockedPeriod.active &&
+          utcIntervalsOverlap(
+            resolution.instantUtc,
+            end.endInstantUtc,
+            blockedPeriod.startAtUtc,
+            blockedPeriod.endAtUtc,
+          ),
+      )
+    ) {
+      rejectedCandidates.push({
+        startLocalTime: candidateLocalTime,
+        reason: "BLOCKED_PERIOD_CONFLICT",
+      });
+      continue;
+    }
+
     availableCandidates.push({
       startLocalTime: candidateLocalTime,
       startAtUtc: resolution.instantUtc,
@@ -164,6 +188,24 @@ export function calculateAvailabilityForCandidates(input: Readonly<{
     availableCandidates,
     rejectedCandidates,
   };
+}
+
+function utcIntervalsOverlap(
+  leftStart: string,
+  leftEnd: string,
+  rightStart: string,
+  rightEnd: string,
+): boolean {
+  return (
+    Temporal.Instant.compare(
+      Temporal.Instant.from(leftStart),
+      Temporal.Instant.from(rightEnd),
+    ) < 0 &&
+    Temporal.Instant.compare(
+      Temporal.Instant.from(rightStart),
+      Temporal.Instant.from(leftEnd),
+    ) < 0
+  );
 }
 
 function toLocalInterval(

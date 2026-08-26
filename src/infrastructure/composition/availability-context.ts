@@ -3,6 +3,7 @@ import "server-only";
 import { resolveAdminAccess } from "@/application/admin/resolve-admin-access";
 import type { BusinessScope } from "@/domain/business/business-scope";
 import { getVerifiedAdminAuthUserId } from "@/infrastructure/auth/verified-admin-identity";
+import { PostgresBlockedPeriodRepository } from "@/persistence/availability/postgres-blocked-period-repository";
 import { PostgresWeeklyAvailabilityRepository } from "@/persistence/availability/postgres-weekly-availability-repository";
 import { PostgresDateAvailabilityRepository } from "@/persistence/availability/postgres-date-availability-repository";
 import {
@@ -16,6 +17,7 @@ export type AvailabilityApplicationContext = Readonly<{
   business: BusinessPresentation;
   availability: PostgresWeeklyAvailabilityRepository;
   dateAvailability: PostgresDateAvailabilityRepository;
+  blockedPeriods: PostgresBlockedPeriodRepository;
 }>;
 
 export async function createAdminAvailabilityContext(): Promise<AvailabilityApplicationContext> {
@@ -31,5 +33,6 @@ export async function createAdminAvailabilityContext(): Promise<AvailabilityAppl
     business: await businessRepository.getPresentation(scope),
     availability: new PostgresWeeklyAvailabilityRepository(database, scope),
     dateAvailability: new PostgresDateAvailabilityRepository(database, scope),
+    blockedPeriods: new PostgresBlockedPeriodRepository(database, scope),
   };
 }

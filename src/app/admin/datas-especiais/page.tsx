@@ -64,6 +64,7 @@ export default async function AdminSpecialDatesPage() {
           <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/servicos">Serviços</Link>
           <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/horarios">Horários</Link>
           <span aria-current="page">Datas especiais</span>
+          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/bloqueios">Bloqueios</Link>
         </nav>
       </header>
       <DateAvailabilityManager initialDateAvailability={pageData.dateAvailability} />

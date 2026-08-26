@@ -272,6 +272,8 @@ export function DateAvailabilityManager({
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
+                  name="exception-mode"
+                  value="CLOSED"
                   checked={editor.exceptionMode === "CLOSED"}
                   onChange={() => setExceptionMode("CLOSED")}
                 />
@@ -280,6 +282,8 @@ export function DateAvailabilityManager({
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
+                  name="exception-mode"
+                  value="REPLACE"
                   checked={editor.exceptionMode === "REPLACE"}
                   onChange={() => setExceptionMode("REPLACE")}
                 />
