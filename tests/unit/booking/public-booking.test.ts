@@ -2,11 +2,11 @@ import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
 import { enumeratePublicAvailability } from "@/application/availability/calculate-availability";
-import { listPublicBookingAvailability } from "@/application/booking/public-booking-use-cases";
+import { listPublicBookingAvailability, listPublicBookingDateOptions } from "@/application/booking/public-booking-use-cases";
 import type { PublicBookingRepository } from "@/application/booking/public-booking-repository";
 import { normalizePublicBookingCommand, stableSerialize } from "@/domain/booking/public-booking";
 import { businessScopeFromServer } from "@/domain/business/business-scope";
-import { publicBookingInputSchema } from "@/delivery/booking/public-booking-input";
+import { publicAvailabilityDatesQuerySchema, publicBookingInputSchema } from "@/delivery/booking/public-booking-input";
 
 vi.mock("server-only", () => ({}));
 
@@ -48,6 +48,54 @@ describe("Sprint 4 public booking domain", () => {
     expect(normalized.customer).toEqual({ name: "Ana María", whatsappE164: "+5561999990000" });
     expect(createHash("sha256").update(stableSerialize(normalized)).digest("hex")).toHaveLength(64);
     expect(publicBookingInputSchema.safeParse({ ...raw, business_id: BUSINESS }).success).toBe(false);
+    expect(publicAvailabilityDatesQuerySchema.safeParse({ serviceId: SERVICE, business_id: BUSINESS }).success).toBe(false);
+  });
+
+  it("does not offer days outside the working week or CLOSED and respects REPLACE", async () => {
+    const repository = discoveryRepository({
+      bookingHorizonDays: 5,
+      weeklyWorkingWindows: weekly,
+      dateExceptions: [
+        dateException("2026-08-28", "REPLACE", [
+          { id: "xw", dateExceptionId: "x-2026-08-28", startLocalTime: "10:00", endLocalTime: "11:00" },
+        ]),
+        dateException("2026-08-31", "CLOSED", []),
+      ],
+    });
+
+    const result = await listPublicBookingDateOptions(repository, SERVICE, new Date("2026-08-27T12:00:00Z"));
+
+    expect(result.dates.find((date) => date.localDate === "2026-08-27")).toMatchObject({
+      status: "NOT_WORKING",
+      reason: "NO_WORKING_WINDOW",
+    });
+    expect(result.dates.find((date) => date.localDate === "2026-08-28")).toMatchObject({
+      status: "AVAILABLE",
+      firstAvailableLocalTime: "10:00",
+    });
+    expect(result.dates.find((date) => date.localDate === "2026-08-31")).toMatchObject({
+      status: "NOT_WORKING",
+      reason: "CLOSED",
+    });
+  });
+
+  it("distinguishes a fully occupied working day and identifies the next available date", async () => {
+    const repository = discoveryRepository({
+      bookingHorizonDays: 12,
+      weeklyWorkingWindows: weekly,
+      scheduleOccupancies: [
+        { startAtUtc: "2026-08-31T12:00:00Z", endAtUtc: "2026-08-31T21:00:00Z" },
+      ],
+    });
+
+    const result = await listPublicBookingDateOptions(repository, SERVICE, new Date("2026-08-27T12:00:00Z"));
+    const full = result.dates.find((date) => date.localDate === "2026-08-31");
+    const next = result.dates.find(
+      (date) => date.status === "AVAILABLE" && date.localDate > "2026-08-31",
+    );
+
+    expect(full).toMatchObject({ status: "FULLY_BOOKED", reason: "OCCUPIED" });
+    expect(next).toMatchObject({ localDate: "2026-09-07", status: "AVAILABLE" });
   });
 
   it.each([
@@ -67,3 +115,68 @@ describe("Sprint 4 public booking domain", () => {
     await expect(listPublicBookingAvailability(repository, SERVICE, "2026-08-31", new Date("2026-08-27T12:00:00Z"))).rejects.toMatchObject({ status: enabled && configured ? 404 : 503 });
   });
 });
+
+function discoveryRepository(input: Readonly<{
+  bookingHorizonDays: number;
+  weeklyWorkingWindows: typeof weekly;
+  dateExceptions?: readonly ReturnType<typeof dateException>[];
+  scheduleOccupancies?: readonly { startAtUtc: string; endAtUtc: string }[];
+}>): PublicBookingRepository {
+  return {
+    scope: businessScopeFromServer(BUSINESS, "public-singleton"),
+    loadBookingProfile: async () => ({
+      business: {
+        timezone: "America/Sao_Paulo",
+        publicBookingEnabled: true,
+        availabilityVersion: 1,
+      },
+      policy: {
+        minimumLeadMinutes: 0,
+        bookingHorizonDays: input.bookingHorizonDays,
+        slotStepMinutes: 15,
+        bufferMinutes: null,
+        configurationConfirmedAt: new Date(),
+        version: 1,
+      },
+      service: {
+        id: SERVICE,
+        name: "Corte",
+        description: null,
+        durationMinutes: 45,
+        priceMinor: 5000,
+        currencyCode: "BRL",
+        active: true,
+        version: 1,
+      },
+    }),
+    loadDateDiscoveryCalendar: async () => ({
+      weeklyWorkingWindows: input.weeklyWorkingWindows,
+      weeklyBreaks: [],
+      dateExceptions: input.dateExceptions ?? [],
+      scheduleOccupancies: input.scheduleOccupancies ?? [],
+    }),
+  } as unknown as PublicBookingRepository;
+}
+
+function dateException(
+  localDate: string,
+  mode: "CLOSED" | "REPLACE",
+  workingWindows: readonly {
+    id: string;
+    dateExceptionId: string;
+    startLocalTime: string;
+    endLocalTime: string;
+  }[],
+) {
+  return {
+    id: `x-${localDate}`,
+    businessId: BUSINESS,
+    localDate,
+    mode,
+    privateNote: null,
+    version: 1,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+    workingWindows,
+  } as const;
+}

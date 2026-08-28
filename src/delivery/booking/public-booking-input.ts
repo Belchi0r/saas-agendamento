@@ -9,6 +9,10 @@ export const publicAvailabilityQuerySchema = z.object({
   localDate,
 }).strict();
 
+export const publicAvailabilityDatesQuerySchema = z.object({
+  serviceId: uuid,
+}).strict();
+
 export const publicBookingInputSchema = z.object({
   serviceId: uuid,
   localDate,

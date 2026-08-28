@@ -25,12 +25,18 @@ import {
   verifyCapabilityCookie,
   type BookingSecrets,
 } from "@/infrastructure/security/booking-secrets";
-import { offsetToMinutes } from "@/infrastructure/time/temporal";
+import {
+  assertIanaTimeZone,
+  offsetToMinutes,
+  Temporal,
+} from "@/infrastructure/time/temporal";
 import { findPostgresError } from "@/persistence/database/postgres-error";
 import { ApplicationError } from "@/shared/errors/application-error";
 
 import type {
+  BookingDateCalendarFacts,
   BookingFacts,
+  BookingProfileFacts,
   PublicBookingRepository,
 } from "./public-booking-repository";
 
@@ -40,6 +46,35 @@ export type BookingAvailabilityView = Readonly<{
   service: NonNullable<BookingFacts["service"]>;
   slotStepMinutes: 15;
   slots: PublicAvailabilityResult["availableCandidates"];
+}>;
+
+export type PublicBookingDateStatus =
+  | "AVAILABLE"
+  | "NOT_WORKING"
+  | "TOO_SOON"
+  | "FULLY_BOOKED";
+
+export type PublicBookingDateReason =
+  | "CLOSED"
+  | "NO_WORKING_WINDOW"
+  | "SERVICE_DOES_NOT_FIT"
+  | "LEAD_TIME"
+  | "OCCUPIED"
+  | null;
+
+export type PublicBookingDateOption = Readonly<{
+  localDate: string;
+  status: PublicBookingDateStatus;
+  reason: PublicBookingDateReason;
+  availableSlotCount: number;
+  firstAvailableLocalTime: string | null;
+}>;
+
+export type PublicBookingDateDiscovery = Readonly<{
+  timezone: string;
+  horizonStartDate: string;
+  horizonEndDate: string;
+  dates: readonly PublicBookingDateOption[];
 }>;
 
 export type PublicBookingConfirmation = Readonly<{
@@ -58,6 +93,52 @@ export async function listPublicBookingAvailability(
 ): Promise<BookingAvailabilityView> {
   const facts = await repository.loadAvailabilityFacts(serviceId, localDate);
   return calculatePublicAvailability(facts, localDate, now);
+}
+
+export async function listPublicBookingDateOptions(
+  repository: PublicBookingRepository,
+  serviceId: string,
+  now = new Date(),
+): Promise<PublicBookingDateDiscovery> {
+  const profile = requirePublicBookingProfile(
+    await repository.loadBookingProfile(serviceId),
+  );
+  const nowInstant = Temporal.Instant.from(now.toISOString());
+  const today = nowInstant
+    .toZonedDateTimeISO(profile.timezone)
+    .toPlainDate();
+  const horizonEnd = today.add({ days: profile.policy.bookingHorizonDays });
+  const calendar = await repository.loadDateDiscoveryCalendar({
+    startLocalDate: today.toString(),
+    endLocalDate: horizonEnd.toString(),
+    startAtUtc: localDayBoundary(today, profile.timezone),
+    endAtUtc: localDayBoundary(horizonEnd.add({ days: 1 }), profile.timezone),
+  });
+  const exceptions = new Map(
+    calendar.dateExceptions.map((exception) => [exception.localDate, exception]),
+  );
+  const dates: PublicBookingDateOption[] = [];
+
+  for (
+    let date = today;
+    Temporal.PlainDate.compare(date, horizonEnd) <= 0;
+    date = date.add({ days: 1 })
+  ) {
+    dates.push(classifyBookingDate(
+      profile,
+      calendar,
+      exceptions.get(date.toString()) ?? null,
+      date.toString(),
+      now,
+    ));
+  }
+
+  return {
+    timezone: profile.timezone,
+    horizonStartDate: today.toString(),
+    horizonEndDate: horizonEnd.toString(),
+    dates,
+  };
 }
 
 export async function confirmPublicBooking(
@@ -344,6 +425,36 @@ function calculatePublicAvailability(
   localDate: string,
   now: Date,
 ): BookingAvailabilityView {
+  const profile = requirePublicBookingProfile(facts);
+  const result = enumeratePublicAvailability({
+    localDate,
+    timezone: profile.timezone,
+    serviceDurationMinutes: profile.service.durationMinutes,
+    slotStepMinutes: profile.policy.slotStepMinutes,
+    minimumLeadMinutes: profile.policy.minimumLeadMinutes,
+    bookingHorizonDays: profile.policy.bookingHorizonDays,
+    nowUtc: now.toISOString(),
+    weeklyWorkingWindows: facts.weeklyWorkingWindows,
+    weeklyBreaks: facts.weeklyBreaks,
+    dateException: facts.dateException,
+    blockedPeriods: [],
+    scheduleOccupancies: facts.scheduleOccupancies,
+  });
+  return {
+    localDate,
+    timezone: result.timezone,
+    service: profile.service,
+    slotStepMinutes: 15,
+    slots: result.availableCandidates,
+  };
+}
+
+function requirePublicBookingProfile(facts: BookingProfileFacts): Readonly<{
+  timezone: string;
+  business: NonNullable<BookingProfileFacts["business"]>;
+  policy: NonNullable<BookingProfileFacts["policy"]>;
+  service: NonNullable<BookingProfileFacts["service"]>;
+}> {
   if (
     !facts.business?.publicBookingEnabled ||
     !facts.business.timezone ||
@@ -369,27 +480,107 @@ function calculatePublicAvailability(
       404,
     );
   }
-  const result = enumeratePublicAvailability({
+  let timezone: string;
+  try {
+    timezone = assertIanaTimeZone(facts.business.timezone);
+  } catch {
+    throw new ApplicationError(
+      "BUSINESS_TIMEZONE_INVALID",
+      "O timezone do negócio é inválido.",
+      503,
+    );
+  }
+  return {
+    timezone,
+    business: facts.business,
+    policy: facts.policy,
+    service: facts.service,
+  };
+}
+
+function classifyBookingDate(
+  profile: ReturnType<typeof requirePublicBookingProfile>,
+  calendar: BookingDateCalendarFacts,
+  dateException: BookingDateCalendarFacts["dateExceptions"][number] | null,
+  localDate: string,
+  now: Date,
+): PublicBookingDateOption {
+  const common = {
     localDate,
-    timezone: facts.business.timezone,
-    serviceDurationMinutes: facts.service.durationMinutes,
-    slotStepMinutes: facts.policy.slotStepMinutes,
-    minimumLeadMinutes: facts.policy.minimumLeadMinutes,
-    bookingHorizonDays: facts.policy.bookingHorizonDays,
-    nowUtc: now.toISOString(),
-    weeklyWorkingWindows: facts.weeklyWorkingWindows,
-    weeklyBreaks: facts.weeklyBreaks,
-    dateException: facts.dateException,
+    timezone: profile.timezone,
+    serviceDurationMinutes: profile.service.durationMinutes,
+    slotStepMinutes: profile.policy.slotStepMinutes,
+    bookingHorizonDays: profile.policy.bookingHorizonDays,
+    weeklyWorkingWindows: calendar.weeklyWorkingWindows,
+    weeklyBreaks: calendar.weeklyBreaks,
+    dateException,
     blockedPeriods: [],
-    scheduleOccupancies: facts.scheduleOccupancies,
+  } as const;
+  const structural = enumeratePublicAvailability({
+    ...common,
+    minimumLeadMinutes: 0,
+    nowUtc: localDayBoundary(Temporal.PlainDate.from(localDate), profile.timezone),
+    scheduleOccupancies: [],
   });
+  if (structural.source === "CLOSED") {
+    return unavailableDate(localDate, "NOT_WORKING", "CLOSED");
+  }
+  if (structural.effectiveWindows.length === 0) {
+    return unavailableDate(localDate, "NOT_WORKING", "NO_WORKING_WINDOW");
+  }
+  if (structural.availableCandidates.length === 0) {
+    return unavailableDate(localDate, "NOT_WORKING", "SERVICE_DOES_NOT_FIT");
+  }
+
+  const policyEligible = enumeratePublicAvailability({
+    ...common,
+    minimumLeadMinutes: profile.policy.minimumLeadMinutes,
+    nowUtc: now.toISOString(),
+    scheduleOccupancies: [],
+  });
+  if (policyEligible.availableCandidates.length === 0) {
+    return unavailableDate(localDate, "TOO_SOON", "LEAD_TIME");
+  }
+
+  const available = enumeratePublicAvailability({
+    ...common,
+    minimumLeadMinutes: profile.policy.minimumLeadMinutes,
+    nowUtc: now.toISOString(),
+    scheduleOccupancies: calendar.scheduleOccupancies,
+  }).availableCandidates;
+  if (available.length === 0) {
+    return unavailableDate(localDate, "FULLY_BOOKED", "OCCUPIED");
+  }
   return {
     localDate,
-    timezone: result.timezone,
-    service: facts.service,
-    slotStepMinutes: 15,
-    slots: result.availableCandidates,
+    status: "AVAILABLE",
+    reason: null,
+    availableSlotCount: available.length,
+    firstAvailableLocalTime: available[0]?.startLocalTime ?? null,
   };
+}
+
+function unavailableDate(
+  localDate: string,
+  status: Exclude<PublicBookingDateStatus, "AVAILABLE">,
+  reason: Exclude<PublicBookingDateReason, null>,
+): PublicBookingDateOption {
+  return {
+    localDate,
+    status,
+    reason,
+    availableSlotCount: 0,
+    firstAvailableLocalTime: null,
+  };
+}
+
+function localDayBoundary(date: Temporal.PlainDate, timezone: string): string {
+  return date
+    .toPlainDateTime("12:00")
+    .toZonedDateTime(timezone)
+    .startOfDay()
+    .toInstant()
+    .toString();
 }
 
 function slotUnavailable(): ApplicationError {

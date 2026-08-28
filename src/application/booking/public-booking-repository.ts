@@ -15,6 +15,19 @@ export type BookingFacts = Readonly<{
   dateException: DateAvailabilityException | null;
   scheduleOccupancies: readonly OccupiedScheduleInterval[];
 }>;
+export type BookingProfileFacts = Pick<BookingFacts, "business" | "policy" | "service">;
+export type BookingDateDiscoveryRange = Readonly<{
+  startLocalDate: string;
+  endLocalDate: string;
+  startAtUtc: string;
+  endAtUtc: string;
+}>;
+export type BookingDateCalendarFacts = Readonly<{
+  weeklyWorkingWindows: readonly WeeklyWorkingWindow[];
+  weeklyBreaks: readonly WeeklyBreak[];
+  dateExceptions: readonly DateAvailabilityException[];
+  scheduleOccupancies: readonly OccupiedScheduleInterval[];
+}>;
 export type IdempotencyReceipt = Readonly<{
   id: string; businessId: string; operation: string; requestFingerprint: Buffer;
   fingerprintVersion: string; appointmentId: string; responseStatus: number;
@@ -37,6 +50,8 @@ export interface PublicBookingTransaction {
 export type ManagementTokenAuthorization = Readonly<{ tokenRef: string; tokenVersion: number; appointmentVersion: number }>;
 export interface PublicBookingRepository {
   readonly scope: BusinessScope;
+  loadBookingProfile(serviceId: string): Promise<BookingProfileFacts>;
+  loadDateDiscoveryCalendar(range: BookingDateDiscoveryRange): Promise<BookingDateCalendarFacts>;
   loadAvailabilityFacts(serviceId: string, localDate: string): Promise<BookingFacts>;
   transaction<T>(work: (transaction: PublicBookingTransaction) => Promise<T>): Promise<T>;
   exchangeManagementToken(tokenHash: Buffer, usedAt: Date): Promise<ManagementTokenAuthorization | null>;

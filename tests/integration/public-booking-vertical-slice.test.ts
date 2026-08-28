@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 vi.mock("server-only", () => ({}));
 
-import { confirmPublicBooking, exchangeManagementToken, getManagedAppointment, listPublicBookingAvailability, revokeManagementToken, rotateManagementToken } from "@/application/booking/public-booking-use-cases";
+import { confirmPublicBooking, exchangeManagementToken, getManagedAppointment, listPublicBookingAvailability, listPublicBookingDateOptions, revokeManagementToken, rotateManagementToken } from "@/application/booking/public-booking-use-cases";
 import type { PublicBookingCommand } from "@/domain/booking/public-booking";
 import { businessScopeFromServer } from "@/domain/business/business-scope";
 import type { BookingSecrets } from "@/infrastructure/security/booking-secrets";
@@ -65,6 +65,16 @@ databaseSuite("Sprint 4 public booking on real PostgreSQL", () => {
   });
 
   it("enumerates persisted rules, creates snapshots, and replays exactly one effect", async () => {
+    const dateOptions = await listPublicBookingDateOptions(repository, SERVICE, NOW);
+    expect(dateOptions.dates.find((date) => date.localDate === "2026-08-27")).toMatchObject({
+      status: "NOT_WORKING",
+      reason: "NO_WORKING_WINDOW",
+    });
+    expect(dateOptions.dates.find((date) => date.localDate === "2026-08-31")).toMatchObject({
+      status: "AVAILABLE",
+      firstAvailableLocalTime: "09:00",
+    });
+
     const availability = await listPublicBookingAvailability(repository, SERVICE, "2026-08-31", NOW);
     expect(availability.slots.slice(0, 4).map((slot) => slot.startLocalTime)).toEqual(["09:00","09:15","09:30","09:45"]);
     expect(availability.slots.some((slot) => slot.startLocalTime === "12:00")).toBe(false);

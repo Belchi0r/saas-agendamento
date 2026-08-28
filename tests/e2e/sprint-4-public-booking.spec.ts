@@ -29,8 +29,9 @@ test.describe.serial("Sprint 4 public booking vertical slice", () => {
 
     await page.goto("/");
     await page.getByRole("button", { name: /Corte público E2E/ }).click();
-    await page.getByLabel("Data", { exact: true }).fill("2026-09-01");
-    await page.getByRole("button", { name: "Ver horários" }).click();
+    await page
+      .getByRole("button", { name: "Escolher terça-feira, 1 de setembro" })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Escolha o horário" }),
     ).toBeVisible();
