@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getDateAvailability } from "@/application/availability/date-availability-use-cases";
 import { toDateAvailabilityView } from "@/application/availability/date-availability-view";
+import { AdminNavigation } from "@/components/admin/admin-navigation";
 import { DateAvailabilityManager } from "@/components/admin/date-availability-manager";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { createAdminAvailabilityContext } from "@/infrastructure/composition/availability-context";
@@ -60,12 +60,7 @@ export default async function AdminSpecialDatesPage() {
           </div>
           <LogoutButton />
         </div>
-        <nav className="mt-6 flex flex-wrap gap-5 text-sm font-semibold" aria-label="Administração">
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/servicos">Serviços</Link>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/horarios">Horários</Link>
-          <span aria-current="page">Datas especiais</span>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/bloqueios">Bloqueios</Link>
-        </nav>
+        <AdminNavigation active="special-dates" />
       </header>
       <DateAvailabilityManager initialDateAvailability={pageData.dateAvailability} />
     </main>

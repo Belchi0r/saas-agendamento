@@ -5,6 +5,8 @@ import {
   type PublicAvailabilityResult,
 } from "@/application/availability/calculate-availability";
 import {
+  BrazilianWhatsappError,
+  normalizeBrazilianWhatsapp,
   normalizePublicBookingCommand,
   PUBLIC_BOOKING_OPERATION,
   reviewedServiceMatches,
@@ -163,8 +165,18 @@ export async function confirmPublicBooking(
 
   let command: ReturnType<typeof normalizePublicBookingCommand>;
   try {
-    command = normalizePublicBookingCommand(rawCommand);
-  } catch {
+    command = normalizePublicBookingCommand({
+      ...rawCommand,
+      whatsappE164: normalizeBrazilianWhatsapp(rawCommand.whatsappE164),
+    });
+  } catch (error) {
+    if (error instanceof BrazilianWhatsappError) {
+      throw new ApplicationError(
+        "BRAZILIAN_WHATSAPP_INVALID",
+        "Digite um WhatsApp válido com DDD.",
+        400,
+      );
+    }
     throw new ApplicationError(
       "PUBLIC_BOOKING_INPUT_INVALID",
       "Revise os dados do agendamento.",
@@ -271,6 +283,7 @@ export async function confirmPublicBooking(
         priceMinor: availability.service.priceMinor,
         currencyCode: availability.service.currencyCode,
         customerName: command.customer.name,
+        customerWhatsapp: command.customer.whatsappE164,
         scheduledStartAt: slot.startAtUtc,
         scheduledEndAt: slot.endAtUtc,
         timezone: availability.timezone,

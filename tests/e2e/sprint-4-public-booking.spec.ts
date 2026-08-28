@@ -25,7 +25,7 @@ test.describe.serial("Sprint 4 public booking vertical slice", () => {
     await page.getByLabel("Início da faixa de Terça-feira").fill("09:00");
     await page.getByLabel("Fim da faixa de Terça-feira").fill("12:00");
     await page.getByRole("button", { name: "Salvar faixa" }).click();
-    await expect(page.getByText("09:00–12:00", { exact: true })).toBeVisible();
+    await expect(page.getByText("09:00–12:00", { exact: true }).first()).toBeVisible();
 
     await page.goto("/");
     await page.getByRole("button", { name: /Corte público E2E/ }).click();
@@ -38,7 +38,8 @@ test.describe.serial("Sprint 4 public booking vertical slice", () => {
     await page.getByRole("button", { name: "09:00", exact: true }).click();
     await page.getByRole("button", { name: "Continuar" }).click();
     await page.getByLabel("Nome", { exact: true }).fill("Cliente E2E");
-    await page.getByLabel("WhatsApp").fill("+55 61 99999-0101");
+    await page.getByLabel("WhatsApp").fill("61994402561");
+    await expect(page.getByLabel("WhatsApp")).toHaveValue("(61) 99440-2561");
     await page.getByRole("button", { name: "Revisar" }).click();
     await expect(page.getByText("01/09/2026 às 09:00")).toBeVisible();
     await page.getByRole("button", { name: "Confirmar agendamento" }).click();
@@ -55,7 +56,9 @@ test.describe.serial("Sprint 4 public booking vertical slice", () => {
     await expect(page).toHaveURL(/\/manage$/);
     await expect(page.getByRole("heading", { name: "Confirmado" })).toBeVisible();
     await expect(page.getByText("01/09/2026 às 09:00")).toBeVisible();
-    await expect(page.getByText("Agendado para Cliente E2E.")).toBeVisible();
+    await expect(page.getByText("Cliente E2E")).toBeVisible();
+    await expect(page.getByText("(61) 99440-2561")).toBeVisible();
+    await expect(page.getByText("Gerenciamento somente para consulta")).toBeVisible();
     await expect(page).not.toHaveURL(/#token=/);
   });
 });

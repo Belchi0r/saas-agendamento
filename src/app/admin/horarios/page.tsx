@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getWeeklyAvailability } from "@/application/availability/weekly-availability-use-cases";
 import { toWeeklyAvailabilityView } from "@/application/availability/weekly-availability-view";
+import { AdminNavigation } from "@/components/admin/admin-navigation";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { WeeklyAvailabilityManager } from "@/components/admin/weekly-availability-manager";
 import { createAdminAvailabilityContext } from "@/infrastructure/composition/availability-context";
@@ -75,18 +75,7 @@ export default async function AdminAvailabilityPage() {
           </div>
           <LogoutButton />
         </div>
-        <nav className="mt-6 flex flex-wrap gap-5 text-sm font-semibold" aria-label="Administração">
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/servicos">
-            Serviços
-          </Link>
-          <span aria-current="page">Horários</span>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/datas-especiais">
-            Datas especiais
-          </Link>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/bloqueios">
-            Bloqueios
-          </Link>
-        </nav>
+        <AdminNavigation active="weekly" />
       </header>
 
       <WeeklyAvailabilityManager initialAvailability={pageData.availability} />

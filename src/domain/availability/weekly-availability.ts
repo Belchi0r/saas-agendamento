@@ -30,6 +30,20 @@ export type WeeklyRangeDraft = Readonly<{
   endLocalTime: string;
 }>;
 
+export type WeeklyDayReplacement = Readonly<{
+  weekday: number;
+  workingWindow: Readonly<{
+    id: string;
+    startLocalTime: string;
+    endLocalTime: string;
+  }>;
+  weeklyBreak: Readonly<{
+    id: string;
+    startLocalTime: string;
+    endLocalTime: string;
+  }> | null;
+}>;
+
 export type WeeklyAvailabilityMutation =
   | Readonly<{
       kind: "create-working-window";
@@ -64,6 +78,12 @@ export type WeeklyAvailabilityMutation =
       kind: "delete-break";
       id: string;
       expectedAvailabilityVersion: number;
+    }>
+  | Readonly<{
+      kind: "replace-days";
+      replacements: readonly WeeklyDayReplacement[];
+      confirmReplaceExisting: boolean;
+      expectedAvailabilityVersion: number;
     }>;
 
 export type WeeklyAvailabilityRuleCode =
@@ -71,7 +91,8 @@ export type WeeklyAvailabilityRuleCode =
   | "WEEKLY_ITEM_NOT_FOUND"
   | "WORKING_WINDOW_OVERLAP"
   | "WEEKLY_BREAK_OVERLAP"
-  | "WEEKLY_BREAK_OUTSIDE_WORKING_WINDOW";
+  | "WEEKLY_BREAK_OUTSIDE_WORKING_WINDOW"
+  | "WEEKLY_REPLACEMENT_CONFIRMATION_REQUIRED";
 
 export class WeeklyAvailabilityRuleError extends Error {
   constructor(readonly code: WeeklyAvailabilityRuleCode) {
@@ -235,6 +256,44 @@ export function assertWeeklyAvailabilityMutation(
     case "delete-break":
       breaks = remove(breaks, mutation.id);
       break;
+    case "replace-days": {
+      const weekdays = mutation.replacements.map((item) => item.weekday);
+      if (
+        weekdays.length === 0 ||
+        new Set(weekdays).size !== weekdays.length
+      ) {
+        throw new WeeklyAvailabilityRuleError("WEEKLY_RANGE_INVALID");
+      }
+
+      const hasExistingConfiguration = workingWindows.some((item) =>
+        weekdays.includes(item.weekday),
+      ) || breaks.some((item) => weekdays.includes(item.weekday));
+      if (hasExistingConfiguration && !mutation.confirmReplaceExisting) {
+        throw new WeeklyAvailabilityRuleError(
+          "WEEKLY_REPLACEMENT_CONFIRMATION_REQUIRED",
+        );
+      }
+
+      workingWindows = workingWindows.filter(
+        (item) => !weekdays.includes(item.weekday),
+      );
+      breaks = breaks.filter((item) => !weekdays.includes(item.weekday));
+      for (const replacement of mutation.replacements) {
+        workingWindows.push(rangeFor(replacement.workingWindow.id, {
+          weekday: replacement.weekday,
+          startLocalTime: replacement.workingWindow.startLocalTime,
+          endLocalTime: replacement.workingWindow.endLocalTime,
+        }));
+        if (replacement.weeklyBreak) {
+          breaks.push(rangeFor(replacement.weeklyBreak.id, {
+            weekday: replacement.weekday,
+            startLocalTime: replacement.weeklyBreak.startLocalTime,
+            endLocalTime: replacement.weeklyBreak.endLocalTime,
+          }));
+        }
+      }
+      break;
+    }
   }
 
   assertWeeklyAvailabilityState({ workingWindows, breaks });

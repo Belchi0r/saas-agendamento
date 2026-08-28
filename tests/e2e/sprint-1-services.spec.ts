@@ -61,7 +61,7 @@ test.describe.serial("Sprint 1 Service vertical slice", () => {
     await page.goto("/admin/servicos");
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Desativar" }).click();
-    await expect(page.getByText("Inativo", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Status: Inativo")).toBeVisible();
 
     await page.goto("/");
     await expect(page.getByText("Consulta personalizada")).toHaveCount(0);

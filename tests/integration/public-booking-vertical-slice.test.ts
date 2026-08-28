@@ -79,8 +79,8 @@ databaseSuite("Sprint 4 public booking on real PostgreSQL", () => {
     expect(availability.slots.slice(0, 4).map((slot) => slot.startLocalTime)).toEqual(["09:00","09:15","09:30","09:45"]);
     expect(availability.slots.some((slot) => slot.startLocalTime === "12:00")).toBe(false);
 
-    const first = await confirmPublicBooking(repository, command("09:00", "Ana", "+5561999990000"), "idem-success-0000000001", secrets, "http://localhost:3000", NOW);
-    const replay = await confirmPublicBooking(repository, command("09:00", "Ana", "+55 (61) 99999-0000"), "idem-success-0000000001", secrets, "http://localhost:3000", NOW);
+    const first = await confirmPublicBooking(repository, command("09:00", "Ana", "61994402561"), "idem-success-0000000001", secrets, "http://localhost:3000", NOW);
+    const replay = await confirmPublicBooking(repository, command("09:00", "Ana", "+55 (61) 99440-2561"), "idem-success-0000000001", secrets, "http://localhost:3000", NOW);
     expect(first.disposition).toBe("CREATED");
     expect(replay.disposition).toBe("REPLAYED");
     expect(replay.managementLink).toBe(first.managementLink);
@@ -90,8 +90,8 @@ databaseSuite("Sprint 4 public booking on real PostgreSQL", () => {
     const counts = await pool.query(`select (select count(*)::int from app_private.appointment) appointments,(select count(*)::int from app_private.customer) customers,(select count(*)::int from app_private.schedule_occupancy where appointment_id is not null) occupancies,(select count(*)::int from app_private.appointment_event) events,(select count(*)::int from app_private.idempotency_request) receipts`);
     expect(counts.rows[0]).toEqual({ appointments:1, customers:1, occupancies:1, events:1, receipts:1 });
     await pool.query(`update app_private.service set name='Nome novo',duration_minutes=60,price_minor=7000,version=2 where id=$1`, [SERVICE]);
-    const snapshot = await pool.query(`select service_name_snapshot,service_duration_minutes_snapshot,service_price_minor_snapshot,timezone_snapshot,local_date_snapshot::text,local_time_snapshot::text from app_private.appointment`);
-    expect(snapshot.rows[0]).toMatchObject({ service_name_snapshot:"Corte essencial",service_duration_minutes_snapshot:45,service_price_minor_snapshot:5000,timezone_snapshot:"America/Sao_Paulo",local_date_snapshot:"2026-08-31" });
+    const snapshot = await pool.query(`select service_name_snapshot,service_duration_minutes_snapshot,service_price_minor_snapshot,customer_whatsapp_snapshot,timezone_snapshot,local_date_snapshot::text,local_time_snapshot::text from app_private.appointment`);
+    expect(snapshot.rows[0]).toMatchObject({ service_name_snapshot:"Corte essencial",service_duration_minutes_snapshot:45,service_price_minor_snapshot:5000,customer_whatsapp_snapshot:"+5561994402561",timezone_snapshot:"America/Sao_Paulo",local_date_snapshot:"2026-08-31" });
 
     const rawToken = new URL(first.managementLink).hash.replace("#token=", "");
     const persistence = JSON.stringify((await pool.query(`select encode(token_hash,'hex') token_hash,encode(response_envelope,'hex') response_envelope from app_private.appointment_access_token cross join app_private.idempotency_request`)).rows);

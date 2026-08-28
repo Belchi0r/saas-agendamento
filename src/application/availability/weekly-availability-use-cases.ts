@@ -15,6 +15,16 @@ import type {
 export type WeeklyRangeCommand = WeeklyRangeDraft &
   Readonly<{ expectedAvailabilityVersion: number }>;
 
+export type ReplaceWeeklyDaysCommand = Readonly<{
+  weekdays: readonly number[];
+  workingStartLocalTime: string;
+  workingEndLocalTime: string;
+  breakStartLocalTime: string | null;
+  breakEndLocalTime: string | null;
+  confirmReplaceExisting: boolean;
+  expectedAvailabilityVersion: number;
+}>;
+
 function validateExpectedVersion(version: number): void {
   if (!Number.isSafeInteger(version) || version <= 0) {
     throw new ApplicationError(
@@ -128,5 +138,59 @@ export function deleteWeeklyBreak(
     kind: "delete-break",
     id,
     expectedAvailabilityVersion,
+  });
+}
+
+export function replaceWeeklyDays(
+  repository: WeeklyAvailabilityRepository,
+  input: ReplaceWeeklyDaysCommand,
+): Promise<WeeklyAvailabilitySnapshot> {
+  validateExpectedVersion(input.expectedAvailabilityVersion);
+  if (
+    input.weekdays.length === 0 ||
+    new Set(input.weekdays).size !== input.weekdays.length ||
+    (input.breakStartLocalTime === null) !== (input.breakEndLocalTime === null)
+  ) {
+    throw new ApplicationError(
+      "WEEKLY_RANGE_INVALID",
+      "Selecione os dias e revise os horários informados.",
+      400,
+    );
+  }
+
+  for (const weekday of input.weekdays) {
+    validateRange({
+      weekday,
+      startLocalTime: input.workingStartLocalTime,
+      endLocalTime: input.workingEndLocalTime,
+    });
+    if (input.breakStartLocalTime && input.breakEndLocalTime) {
+      validateRange({
+        weekday,
+        startLocalTime: input.breakStartLocalTime,
+        endLocalTime: input.breakEndLocalTime,
+      });
+    }
+  }
+
+  return repository.applyMutation({
+    kind: "replace-days",
+    replacements: input.weekdays.map((weekday) => ({
+      weekday,
+      workingWindow: {
+        id: randomUUID(),
+        startLocalTime: input.workingStartLocalTime,
+        endLocalTime: input.workingEndLocalTime,
+      },
+      weeklyBreak: input.breakStartLocalTime && input.breakEndLocalTime
+        ? {
+            id: randomUUID(),
+            startLocalTime: input.breakStartLocalTime,
+            endLocalTime: input.breakEndLocalTime,
+          }
+        : null,
+    })),
+    confirmReplaceExisting: input.confirmReplaceExisting,
+    expectedAvailabilityVersion: input.expectedAvailabilityVersion,
   });
 }

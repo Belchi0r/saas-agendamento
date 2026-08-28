@@ -273,7 +273,15 @@ export function ServiceManager({
     const editing = editingId === service.id;
 
     return (
-      <li key={service.id} className="py-6">
+      <li
+        key={service.id}
+        data-status={service.active ? "active" : "inactive"}
+        className={`my-3 border-l-4 px-4 py-5 ${
+          service.active
+            ? "border-[var(--accent)] bg-[var(--surface)]"
+            : "border-[var(--muted)] bg-transparent"
+        }`}
+      >
         {editing ? (
           <form onSubmit={(event) => saveEdit(event, service)}>
             <p className="mb-5 border-l-2 border-[var(--accent)] pl-4 text-sm leading-6 text-[var(--muted)]">
@@ -314,24 +322,42 @@ export function ServiceManager({
                   </p>
                 ) : null}
               </div>
-              <p className="shrink-0 text-sm font-semibold">
+              <p
+                className={`shrink-0 rounded-full border px-3 py-1 text-sm font-semibold ${
+                  service.active
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                    : "border-[var(--foreground)] bg-transparent"
+                }`}
+                aria-label={`Status: ${service.active ? "Ativo" : "Inativo"}`}
+              >
+                <span aria-hidden="true">{service.active ? "✓" : "—"}</span>{" "}
                 {service.active ? "Ativo" : "Inativo"}
               </p>
             </div>
-            <p className="mt-3 text-sm text-[var(--muted)] tabular-nums">
-              {formatMinorUnits(service.priceMinor, service.currencyCode)} ·{" "}
-              {service.durationMinutes} min
-            </p>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold">
+            <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm tabular-nums">
+              <div>
+                <dt className="text-xs font-semibold tracking-[0.06em] text-[var(--muted)] uppercase">Preço</dt>
+                <dd className="mt-1 font-semibold">{formatMinorUnits(service.priceMinor, service.currencyCode)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold tracking-[0.06em] text-[var(--muted)] uppercase">Duração</dt>
+                <dd className="mt-1 font-semibold">{service.durationMinutes} min</dd>
+              </div>
+            </dl>
+            <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
               <button
-                className="underline decoration-[var(--border)] underline-offset-4"
+                className="min-h-11 rounded-md border border-[var(--border)] px-4"
                 type="button"
                 onClick={() => beginEdit(service)}
               >
                 Editar
               </button>
               <button
-                className={`${service.active ? "text-[var(--danger)]" : "text-[var(--accent)]"} underline decoration-[var(--border)] underline-offset-4`}
+                className={`min-h-11 rounded-md border px-4 ${
+                  service.active
+                    ? "border-[var(--danger)] text-[var(--danger)]"
+                    : "border-[var(--accent)] text-[var(--accent)]"
+                }`}
                 type="button"
                 onClick={() => changeStatus(service)}
                 disabled={submitting}

@@ -8,6 +8,7 @@ import {
   deleteWeeklyBreak,
   deleteWorkingWindow,
   getWeeklyAvailability,
+  replaceWeeklyDays,
   updateWeeklyBreak,
   updateWorkingWindow,
 } from "@/application/availability/weekly-availability-use-cases";
@@ -320,6 +321,56 @@ databaseSuite("Sprint 2 weekly availability on real PostgreSQL", () => {
       await expect(getWeeklyAvailability(repository)).resolves.toMatchObject({
         availabilityVersion: 2,
       });
+    });
+  });
+
+  it("replaces several selected days atomically only after explicit confirmation", async () => {
+    await withRuntimeRepository(BUSINESS_A, async (repository) => {
+      const working = await createWorkingWindow(repository, {
+        weekday: 1,
+        startLocalTime: "09:00",
+        endLocalTime: "18:00",
+        expectedAvailabilityVersion: 1,
+      });
+      const paused = await createWeeklyBreak(repository, {
+        weekday: 1,
+        startLocalTime: "12:00",
+        endLocalTime: "13:00",
+        expectedAvailabilityVersion: working.availabilityVersion,
+      });
+      const command = {
+        weekdays: [1, 2, 3, 4, 5],
+        workingStartLocalTime: "08:00",
+        workingEndLocalTime: "20:00",
+        breakStartLocalTime: "12:00",
+        breakEndLocalTime: "13:30",
+        expectedAvailabilityVersion: paused.availabilityVersion,
+      } as const;
+
+      await expect(replaceWeeklyDays(repository, {
+        ...command,
+        confirmReplaceExisting: false,
+      })).rejects.toMatchObject({
+        code: "WEEKLY_REPLACEMENT_CONFIRMATION_REQUIRED",
+        status: 409,
+      });
+      await expect(getWeeklyAvailability(repository)).resolves.toMatchObject({
+        availabilityVersion: 3,
+        workingWindows: [{ startLocalTime: "09:00", endLocalTime: "18:00" }],
+      });
+
+      const replaced = await replaceWeeklyDays(repository, {
+        ...command,
+        confirmReplaceExisting: true,
+      });
+      expect(replaced.availabilityVersion).toBe(4);
+      expect(replaced.workingWindows).toHaveLength(5);
+      expect(replaced.breaks).toHaveLength(5);
+      expect(replaced.workingWindows.every((item) =>
+        item.businessId === BUSINESS_A &&
+        item.startLocalTime === "08:00" &&
+        item.endLocalTime === "20:00"
+      )).toBe(true);
     });
   });
 });

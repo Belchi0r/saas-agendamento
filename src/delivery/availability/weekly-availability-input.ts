@@ -25,3 +25,18 @@ export const deleteWeeklyRangeInputSchema = z.strictObject({
 });
 
 export const weeklyRangeIdSchema = z.uuid();
+
+export const replaceWeeklyDaysInputSchema = z.strictObject({
+  weekdays: z.array(z.number().int().min(1).max(7)).min(1).max(7),
+  workingStartLocalTime: localTimeSchema,
+  workingEndLocalTime: localTimeSchema,
+  breakStartLocalTime: localTimeSchema.nullable(),
+  breakEndLocalTime: localTimeSchema.nullable(),
+  confirmReplaceExisting: z.boolean(),
+  expectedAvailabilityVersion: expectedAvailabilityVersionSchema,
+}).refine(
+  (input) =>
+    (input.breakStartLocalTime === null) ===
+    (input.breakEndLocalTime === null),
+  { message: "Break times must be provided together." },
+);

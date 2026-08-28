@@ -8,6 +8,7 @@ import {
   createWeeklyBreak,
   createWorkingWindow,
   deleteWeeklyBreak,
+  replaceWeeklyDays,
   updateWorkingWindow,
 } from "@/application/availability/weekly-availability-use-cases";
 import { businessScopeFromServer } from "@/domain/business/business-scope";
@@ -95,5 +96,31 @@ describe("weekly availability application use cases", () => {
 
     expect(thrown).toMatchObject({ code: "WEEKLY_RANGE_INVALID", status: 400 });
     expect(adapter.applyMutation).not.toHaveBeenCalled();
+  });
+
+  it("builds one atomic replacement mutation for several weekdays", async () => {
+    const adapter = repository();
+    await replaceWeeklyDays(adapter, {
+      weekdays: [1, 2, 3, 4, 5],
+      workingStartLocalTime: "08:00",
+      workingEndLocalTime: "20:00",
+      breakStartLocalTime: "12:00",
+      breakEndLocalTime: "13:30",
+      confirmReplaceExisting: true,
+      expectedAvailabilityVersion: 2,
+    });
+
+    expect(adapter.applyMutation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "replace-days",
+        confirmReplaceExisting: true,
+        replacements: expect.arrayContaining([
+          expect.objectContaining({ weekday: 1 }),
+          expect.objectContaining({ weekday: 5 }),
+        ]),
+      }),
+    );
+    const mutation = vi.mocked(adapter.applyMutation).mock.calls[0]?.[0];
+    expect(mutation?.kind === "replace-days" && mutation.replacements).toHaveLength(5);
   });
 });

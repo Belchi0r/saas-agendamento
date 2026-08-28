@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { listAdminServices } from "@/application/services/service-use-cases";
 import { toServiceView } from "@/application/services/service-view";
+import { AdminNavigation } from "@/components/admin/admin-navigation";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { ServiceManager } from "@/components/admin/service-manager";
 import { createAdminServiceContext } from "@/infrastructure/composition/service-context";
@@ -75,18 +75,7 @@ export default async function AdminServicesPage() {
           </div>
           <LogoutButton />
         </div>
-        <nav className="mt-6 flex flex-wrap gap-5 text-sm font-semibold" aria-label="Administração">
-          <span aria-current="page">Serviços</span>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/horarios">
-            Horários
-          </Link>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/datas-especiais">
-            Datas especiais
-          </Link>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/bloqueios">
-            Bloqueios
-          </Link>
-        </nav>
+        <AdminNavigation active="services" />
       </header>
       <ServiceManager
         initialServices={pageData.services}

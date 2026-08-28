@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getBlockedPeriods } from "@/application/availability/blocked-period-use-cases";
 import { toBlockedPeriodListView } from "@/application/availability/blocked-period-view";
+import { AdminNavigation } from "@/components/admin/admin-navigation";
 import { BlockedPeriodManager } from "@/components/admin/blocked-period-manager";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { createAdminAvailabilityContext } from "@/infrastructure/composition/availability-context";
@@ -53,12 +53,7 @@ export default async function AdminBlockedPeriodsPage() {
           </div>
           <LogoutButton />
         </div>
-        <nav className="mt-6 flex flex-wrap gap-5 text-sm font-semibold" aria-label="Administração">
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/servicos">Serviços</Link>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/horarios">Horários</Link>
-          <Link className="underline decoration-[var(--border)] underline-offset-4" href="/admin/datas-especiais">Datas especiais</Link>
-          <span aria-current="page">Bloqueios</span>
-        </nav>
+        <AdminNavigation active="blocks" />
       </header>
       <BlockedPeriodManager initialBlockedPeriods={pageData.blockedPeriods} />
     </main>

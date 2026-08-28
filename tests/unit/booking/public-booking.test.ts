@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { enumeratePublicAvailability } from "@/application/availability/calculate-availability";
 import { listPublicBookingAvailability, listPublicBookingDateOptions } from "@/application/booking/public-booking-use-cases";
 import type { PublicBookingRepository } from "@/application/booking/public-booking-repository";
-import { normalizePublicBookingCommand, stableSerialize } from "@/domain/booking/public-booking";
+import { normalizeBrazilianWhatsapp, normalizePublicBookingCommand, stableSerialize } from "@/domain/booking/public-booking";
 import { businessScopeFromServer } from "@/domain/business/business-scope";
 import { publicAvailabilityDatesQuerySchema, publicBookingInputSchema } from "@/delivery/booking/public-booking-input";
 
@@ -15,6 +15,29 @@ const SERVICE = "30000000-0000-4000-8000-000000000001";
 const weekly = [{ id: "w", businessId: BUSINESS, weekday: 1 as const, startLocalTime: "09:00", endLocalTime: "18:00", createdAt: new Date(0), updatedAt: new Date(0) }];
 
 describe("Sprint 4 public booking domain", () => {
+  it.each([
+    "61994402561",
+    "61 99440-2561",
+    "(61) 99440-2561",
+    "+55 61 99440-2561",
+    "+5561994402561",
+  ])("normalizes the common Brazilian WhatsApp format %s", (input) => {
+    expect(normalizeBrazilianWhatsapp(input)).toBe("+5561994402561");
+  });
+
+  it.each([
+    "6194402561",
+    "00994402561",
+    "6194440256",
+    "61999999999",
+    "+1 202 555 0199",
+    "WhatsApp 61 99440-2561",
+  ])("rejects the impossible WhatsApp input %s", (input) => {
+    expect(() => normalizeBrazilianWhatsapp(input)).toThrowError(
+      "BRAZILIAN_WHATSAPP_INVALID",
+    );
+  });
+
   it("enumerates an explicit 15-minute cadence while duration remains independent", () => {
     const result = enumeratePublicAvailability({
       localDate: "2026-08-31", timezone: "America/Sao_Paulo",

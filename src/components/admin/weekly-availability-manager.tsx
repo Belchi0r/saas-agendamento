@@ -32,6 +32,24 @@ type AvailabilityResponse = Readonly<{
   error?: Readonly<{ message?: string }>;
 }>;
 
+type QuickDraft = Readonly<{
+  weekdays: readonly number[];
+  workingStartLocalTime: string;
+  workingEndLocalTime: string;
+  includeBreak: boolean;
+  breakStartLocalTime: string;
+  breakEndLocalTime: string;
+}>;
+
+const INITIAL_QUICK_DRAFT: QuickDraft = {
+  weekdays: [],
+  workingStartLocalTime: "08:00",
+  workingEndLocalTime: "20:00",
+  includeBreak: true,
+  breakStartLocalTime: "12:00",
+  breakEndLocalTime: "13:30",
+};
+
 function sortAvailability(
   availability: WeeklyAvailabilityView,
 ): WeeklyAvailabilityView {
@@ -144,10 +162,12 @@ export function WeeklyAvailabilityManager({
   const [editor, setEditor] = useState<Editor | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quickDraft, setQuickDraft] = useState<QuickDraft>(INITIAL_QUICK_DRAFT);
+  const [confirmingReplacement, setConfirmingReplacement] = useState(false);
 
   async function requestAvailability(
     url: string,
-    method: "POST" | "PATCH" | "DELETE",
+    method: "POST" | "PUT" | "PATCH" | "DELETE",
     body: unknown,
   ): Promise<boolean> {
     setSubmitting(true);
@@ -209,6 +229,87 @@ export function WeeklyAvailabilityManager({
     );
 
     if (saved) setEditor(null);
+  }
+
+  function selectedDaysHaveConfiguration(): boolean {
+    return availability.workingWindows.some((item) =>
+      quickDraft.weekdays.includes(item.weekday),
+    ) || availability.breaks.some((item) =>
+      quickDraft.weekdays.includes(item.weekday),
+    );
+  }
+
+  function validateQuickDraft(): boolean {
+    if (
+      quickDraft.weekdays.length === 0 ||
+      quickDraft.workingStartLocalTime >= quickDraft.workingEndLocalTime ||
+      (quickDraft.includeBreak &&
+        quickDraft.breakStartLocalTime >= quickDraft.breakEndLocalTime)
+    ) {
+      setError(
+        "Selecione ao menos um dia e mantenha trabalho e pausa em ordem válida.",
+      );
+      return false;
+    }
+    return true;
+  }
+
+  async function applyQuickDraft(confirmReplaceExisting: boolean) {
+    const applied = await requestAvailability(
+      "/api/admin/availability/weekly-template",
+      "PUT",
+      {
+        weekdays: quickDraft.weekdays,
+        workingStartLocalTime: quickDraft.workingStartLocalTime,
+        workingEndLocalTime: quickDraft.workingEndLocalTime,
+        breakStartLocalTime: quickDraft.includeBreak
+          ? quickDraft.breakStartLocalTime
+          : null,
+        breakEndLocalTime: quickDraft.includeBreak
+          ? quickDraft.breakEndLocalTime
+          : null,
+        confirmReplaceExisting,
+        expectedAvailabilityVersion: availability.availabilityVersion,
+      },
+    );
+    if (applied) setConfirmingReplacement(false);
+  }
+
+  async function submitQuickDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!validateQuickDraft()) return;
+    if (selectedDaysHaveConfiguration()) {
+      setConfirmingReplacement(true);
+      return;
+    }
+    await applyQuickDraft(false);
+  }
+
+  function toggleQuickWeekday(weekday: number) {
+    setQuickDraft((current) => ({
+      ...current,
+      weekdays: current.weekdays.includes(weekday)
+        ? current.weekdays.filter((item) => item !== weekday)
+        : [...current.weekdays, weekday].sort(),
+    }));
+    setConfirmingReplacement(false);
+  }
+
+  function useMondayAsTemplate() {
+    const windows = availability.workingWindows.filter((item) => item.weekday === 1);
+    const breaks = availability.breaks.filter((item) => item.weekday === 1);
+    const window = windows[0];
+    if (windows.length !== 1 || !window || breaks.length > 1) return;
+    setQuickDraft((current) => ({
+      ...current,
+      workingStartLocalTime: window.startLocalTime,
+      workingEndLocalTime: window.endLocalTime,
+      includeBreak: breaks.length === 1,
+      breakStartLocalTime: breaks[0]?.startLocalTime ?? current.breakStartLocalTime,
+      breakEndLocalTime: breaks[0]?.endLocalTime ?? current.breakEndLocalTime,
+    }));
+    setConfirmingReplacement(false);
   }
 
   async function removeInterval(
@@ -311,6 +412,158 @@ export function WeeklyAvailabilityManager({
 
   return (
     <div className="mt-8">
+      <WeeklySummary availability={availability} />
+
+      <section className="border-b border-[var(--border)] py-7" aria-labelledby="quick-week-title">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="quick-week-title" className="text-xl font-semibold">
+              Aplicar horário a vários dias
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              Monte uma rotina comum e escolha os dias que devem recebê-la.
+            </p>
+          </div>
+          {availability.workingWindows.filter((item) => item.weekday === 1).length === 1 &&
+          availability.breaks.filter((item) => item.weekday === 1).length <= 1 ? (
+            <button
+              type="button"
+              onClick={useMondayAsTemplate}
+              className="min-h-11 rounded-md border border-[var(--border)] px-4 text-sm font-semibold"
+            >
+              Usar horário de segunda
+            </button>
+          ) : null}
+        </div>
+
+        <form className="mt-5" onSubmit={submitQuickDraft}>
+          <fieldset>
+            <legend className="text-sm font-semibold">Dias</legend>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {WEEKDAYS.map((weekday) => (
+                <label
+                  key={weekday.value}
+                  className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-3 text-sm font-semibold ${
+                    quickDraft.weekdays.includes(weekday.value)
+                      ? "border-[var(--accent)] bg-[var(--surface)]"
+                      : "border-[var(--border)]"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 accent-[var(--accent)]"
+                    checked={quickDraft.weekdays.includes(weekday.value)}
+                    onChange={() => toggleQuickWeekday(weekday.value)}
+                  />
+                  {weekday.name.replace("-feira", "")}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="mt-5">
+            <legend className="text-sm font-semibold">Trabalho</legend>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <LabeledTime
+                id="quick-working-start"
+                label="Início"
+                value={quickDraft.workingStartLocalTime}
+                onChange={(value) => setQuickDraft((current) => ({
+                  ...current,
+                  workingStartLocalTime: value,
+                }))}
+              />
+              <LabeledTime
+                id="quick-working-end"
+                label="Fim"
+                value={quickDraft.workingEndLocalTime}
+                onChange={(value) => setQuickDraft((current) => ({
+                  ...current,
+                  workingEndLocalTime: value,
+                }))}
+              />
+            </div>
+          </fieldset>
+
+          <label className="mt-5 flex min-h-11 items-center gap-3 text-sm font-semibold">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[var(--accent)]"
+              checked={quickDraft.includeBreak}
+              onChange={(event) => setQuickDraft((current) => ({
+                ...current,
+                includeBreak: event.target.checked,
+              }))}
+            />
+            Adicionar pausa
+          </label>
+          {quickDraft.includeBreak ? (
+            <fieldset className="mt-3">
+              <legend className="sr-only">Pausa opcional</legend>
+              <div className="grid grid-cols-2 gap-3">
+                <LabeledTime
+                  id="quick-break-start"
+                  label="Início da pausa"
+                  value={quickDraft.breakStartLocalTime}
+                  onChange={(value) => setQuickDraft((current) => ({
+                    ...current,
+                    breakStartLocalTime: value,
+                  }))}
+                />
+                <LabeledTime
+                  id="quick-break-end"
+                  label="Fim da pausa"
+                  value={quickDraft.breakEndLocalTime}
+                  onChange={(value) => setQuickDraft((current) => ({
+                    ...current,
+                    breakEndLocalTime: value,
+                  }))}
+                />
+              </div>
+            </fieldset>
+          ) : null}
+
+          {!confirmingReplacement ? (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-5 min-h-12 w-full rounded-md bg-[var(--accent)] px-5 font-semibold text-white disabled:opacity-70 sm:w-auto"
+            >
+              {submitting ? "Aplicando…" : "Aplicar aos dias selecionados"}
+            </button>
+          ) : (
+            <div
+              role="alert"
+              className="mt-5 border-l-4 border-[var(--danger)] bg-[var(--surface)] p-4"
+            >
+              <p className="font-semibold">Substituir horários existentes?</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                As faixas e pausas atuais dos dias selecionados serão trocadas por
+                esta configuração. Os outros dias não serão alterados.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void applyQuickDraft(true)}
+                  className="min-h-11 rounded-md bg-[var(--danger)] px-4 text-sm font-semibold text-white disabled:opacity-70"
+                >
+                  {submitting ? "Substituindo…" : "Confirmar e substituir"}
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setConfirmingReplacement(false)}
+                  className="min-h-11 rounded-md border border-[var(--border)] px-4 text-sm font-semibold"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
+      </section>
+
       <section className="border-b border-[var(--border)] pb-6">
         <h2 className="text-lg font-semibold">Horário local recorrente</h2>
         <p className="mt-2 leading-7 text-[var(--muted)]">
@@ -330,6 +583,7 @@ export function WeeklyAvailabilityManager({
       ) : null}
 
       <div className="divide-y divide-[var(--border)]">
+        <h2 className="pt-7 text-xl font-semibold">Ajustes por dia</h2>
         {WEEKDAYS.map((weekday) => {
           const windows = availability.workingWindows.filter(
             (item) => item.weekday === weekday.value,
@@ -412,5 +666,72 @@ export function WeeklyAvailabilityManager({
         })}
       </div>
     </div>
+  );
+}
+
+function WeeklySummary({
+  availability,
+}: Readonly<{ availability: WeeklyAvailabilityView }>) {
+  return (
+    <section className="border-b border-[var(--border)] pb-7" aria-labelledby="weekly-summary-title">
+      <h2 id="weekly-summary-title" className="text-xl font-semibold">
+        Resumo da semana
+      </h2>
+      <ul className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+        {WEEKDAYS.map((weekday) => {
+          const windows = availability.workingWindows.filter(
+            (item) => item.weekday === weekday.value,
+          );
+          const breaks = availability.breaks.filter(
+            (item) => item.weekday === weekday.value,
+          );
+          return (
+            <li
+              key={weekday.value}
+              className="grid grid-cols-[3.5rem_1fr] border-b border-[var(--border)] py-3"
+            >
+              <strong>{weekday.name.slice(0, 3)}</strong>
+              <span className="text-sm">
+                {windows.length === 0
+                  ? "Não trabalha"
+                  : windows.map(intervalLabel).join(", ")}
+                {breaks.length > 0 ? (
+                  <span className="mt-1 block text-[var(--muted)]">
+                    Pausa {breaks.map(intervalLabel).join(", ")}
+                  </span>
+                ) : null}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function LabeledTime({
+  id,
+  label,
+  value,
+  onChange,
+}: Readonly<{
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}>) {
+  return (
+    <label className="block text-sm" htmlFor={id}>
+      {label}
+      <input
+        id={id}
+        type="time"
+        step="60"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 min-h-12 w-full rounded-md border border-[var(--border)] bg-white px-3 tabular-nums"
+        required
+      />
+    </label>
   );
 }

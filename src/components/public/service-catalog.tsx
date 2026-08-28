@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { ServiceView } from "@/application/services/service-view";
+import { normalizeBrazilianWhatsapp } from "@/domain/booking/public-booking";
 import { formatMinorUnits } from "@/shared/money/minor-units";
+
+import {
+  formatBrazilianWhatsapp,
+  maskBrazilianWhatsappInput,
+} from "./brazilian-whatsapp";
 
 type Step = "SERVICE" | "DATE" | "TIME" | "CUSTOMER" | "REVIEW" | "DONE";
 type Slot = Readonly<{
@@ -27,6 +33,8 @@ type Confirmation = {
     durationMinutes: number;
     priceMinor: number;
     currencyCode: string;
+    customerName: string;
+    customerWhatsapp?: string;
   };
   managementLink: string;
 };
@@ -56,6 +64,7 @@ export function PublicServiceCatalog({
   const [localTime, setLocalTime] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [whatsappE164, setWhatsappE164] = useState("");
+  const [whatsappError, setWhatsappError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -73,6 +82,21 @@ export function PublicServiceCatalog({
   const resetIntent = () => {
     idempotencyKey.current = null;
   };
+
+  useEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [step]);
+
+  function continueToReview() {
+    try {
+      normalizeBrazilianWhatsapp(whatsappE164);
+      setWhatsappError("");
+      setStep("REVIEW");
+    } catch {
+      setWhatsappError("Digite um WhatsApp válido com DDD.");
+    }
+  }
 
   async function requestDateOptions(id: string): Promise<DateOption[]> {
     const params = new URLSearchParams({ serviceId: id });
@@ -474,21 +498,35 @@ export function PublicServiceCatalog({
             WhatsApp
             <input
               type="tel"
-              placeholder="+55 61 99999-0000"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(61) 99440-2561"
+              maxLength={16}
               value={whatsappE164}
               onChange={(event) => {
-                setWhatsappE164(event.target.value);
+                setWhatsappE164(maskBrazilianWhatsappInput(event.target.value));
+                setWhatsappError("");
                 resetIntent();
               }}
+              aria-describedby="whatsapp-help whatsapp-error"
+              aria-invalid={whatsappError ? true : undefined}
               className="mt-2 min-h-12 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3"
             />
           </label>
+          <p id="whatsapp-help" className="mt-2 text-sm text-[var(--muted)]">
+            Digite seu WhatsApp com DDD.
+          </p>
+          {whatsappError ? (
+            <p id="whatsapp-error" className="mt-2 text-sm text-[var(--danger)]" role="alert">
+              {whatsappError}
+            </p>
+          ) : null}
           <p className="mt-3 text-sm text-[var(--muted)]">
             Usaremos seu nome e WhatsApp para identificar e gerenciar este agendamento.
           </p>
           <Actions
             back={() => setStep("TIME")}
-            next={() => setStep("REVIEW")}
+            next={continueToReview}
             label="Revisar"
             disabled={customerName.trim().length < 2 || whatsappE164.trim().length < 8}
           />
@@ -518,6 +556,9 @@ export function PublicServiceCatalog({
 
       {step === "DONE" && confirmation ? (
         <section className="py-8">
+          <p className="text-sm font-semibold tracking-[0.08em] text-[var(--accent)] uppercase">
+            Confirmado
+          </p>
           <div className="rounded-xl bg-[var(--surface)] p-6">
             <p className="text-2xl font-semibold">
               {formatDate(confirmation.appointment.localDate)} às {confirmation.appointment.localTime}
@@ -526,6 +567,14 @@ export function PublicServiceCatalog({
             <p className="mt-1 text-[var(--muted)]">
               {confirmation.appointment.durationMinutes} min · {formatMinorUnits(confirmation.appointment.priceMinor, confirmation.appointment.currencyCode)}
             </p>
+            <p className="mt-4 font-semibold">
+              {confirmation.appointment.customerName}
+            </p>
+            {confirmation.appointment.customerWhatsapp ? (
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                {formatBrazilianWhatsapp(confirmation.appointment.customerWhatsapp)}
+              </p>
+            ) : null}
           </div>
           <a
             href={confirmation.managementLink}
@@ -535,7 +584,8 @@ export function PublicServiceCatalog({
             Gerenciar agendamento
           </a>
           <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
-            Guarde este acesso. Não o compartilhe: ele permite visualizar seu agendamento.
+            Guarde este acesso e não o compartilhe. Por enquanto, a área de
+            gerenciamento permite somente consultar os dados da reserva.
           </p>
         </section>
       ) : null}

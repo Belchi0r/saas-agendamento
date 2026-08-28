@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type {
@@ -85,6 +85,12 @@ function mapRuleError(error: WeeklyAvailabilityRuleError): ApplicationError {
         error.code,
         "Informe um dia e um horário inicial anterior ao final.",
         400,
+      );
+    case "WEEKLY_REPLACEMENT_CONFIRMATION_REQUIRED":
+      return new ApplicationError(
+        error.code,
+        "Confirme a substituição dos horários que já existem nos dias selecionados.",
+        409,
       );
   }
 }
@@ -332,6 +338,50 @@ export class PostgresWeeklyAvailabilityRepository
               eq(weeklyBreaks.id, mutation.id),
             ),
           );
+        return;
+      case "replace-days": {
+        const weekdays = mutation.replacements.map((item) => item.weekday);
+        await transaction
+          .delete(weeklyBreaks)
+          .where(
+            and(
+              eq(weeklyBreaks.businessId, this.scope.businessId),
+              inArray(weeklyBreaks.weekday, weekdays),
+            ),
+          );
+        await transaction
+          .delete(weeklyWorkingWindows)
+          .where(
+            and(
+              eq(weeklyWorkingWindows.businessId, this.scope.businessId),
+              inArray(weeklyWorkingWindows.weekday, weekdays),
+            ),
+          );
+        await transaction.insert(weeklyWorkingWindows).values(
+          mutation.replacements.map((replacement) => ({
+            id: replacement.workingWindow.id,
+            businessId: this.scope.businessId,
+            weekday: replacement.weekday,
+            startLocalTime: replacement.workingWindow.startLocalTime,
+            endLocalTime: replacement.workingWindow.endLocalTime,
+          })),
+        );
+        const replacementBreaks = mutation.replacements.flatMap((replacement) =>
+          replacement.weeklyBreak
+            ? [{
+                id: replacement.weeklyBreak.id,
+                businessId: this.scope.businessId,
+                weekday: replacement.weekday,
+                startLocalTime: replacement.weeklyBreak.startLocalTime,
+                endLocalTime: replacement.weeklyBreak.endLocalTime,
+              }]
+            : [],
+        );
+        if (replacementBreaks.length > 0) {
+          await transaction.insert(weeklyBreaks).values(replacementBreaks);
+        }
+        return;
+      }
     }
   }
 

@@ -140,4 +140,37 @@ describe("weekly availability domain", () => {
       ),
     ).toThrowError("WEEKLY_ITEM_NOT_FOUND");
   });
+
+  it("requires explicit confirmation before a multi-day replacement", () => {
+    const state = {
+      workingWindows: [working("monday", "09:00", "18:00")],
+      breaks: [weeklyBreak("lunch", "12:00", "13:00")],
+    };
+    const replacement = {
+      kind: "replace-days" as const,
+      replacements: [1, 2].map((weekday) => ({
+        weekday,
+        workingWindow: {
+          id: `work-${weekday}`,
+          startLocalTime: "08:00",
+          endLocalTime: "20:00",
+        },
+        weeklyBreak: {
+          id: `break-${weekday}`,
+          startLocalTime: "12:00",
+          endLocalTime: "13:30",
+        },
+      })),
+      expectedAvailabilityVersion: 1,
+    };
+
+    expect(() => assertWeeklyAvailabilityMutation(state, {
+      ...replacement,
+      confirmReplaceExisting: false,
+    })).toThrowError("WEEKLY_REPLACEMENT_CONFIRMATION_REQUIRED");
+    expect(() => assertWeeklyAvailabilityMutation(state, {
+      ...replacement,
+      confirmReplaceExisting: true,
+    })).not.toThrow();
+  });
 });
