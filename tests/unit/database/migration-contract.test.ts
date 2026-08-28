@@ -58,9 +58,11 @@ describe("official migration contract", () => {
     expect(sql).toContain("schedule_occupancy_no_overlap");
     expect(sql).toContain("blocked_period_occupancy_guard");
     expect(sql).toContain("schedule_occupancy_owner_guard");
-    expect(sql).not.toMatch(
-      /create table app_private\.(appointment|customer)/i,
-    );
+    expect(sql).toContain("create table app_private.customer");
+    expect(sql).toContain("create table app_private.appointment");
+    expect(sql).toContain("create table app_private.appointment_event");
+    expect(sql).toContain("create table app_private.appointment_access_token");
+    expect(sql).toContain("create table app_private.idempotency_request");
   });
 
   it("keeps date exceptions private and grants only their required DML", () => {
@@ -110,10 +112,25 @@ describe("official migration contract", () => {
     expect(sql).not.toMatch(
       /grant\s+delete\s+on\s+app_private\.blocked_period/i,
     );
-    expect(sql).not.toMatch(/\bappointment_id\b/i);
+    expect(sql).toMatch(/add\s+column\s+appointment_id\s+uuid/i);
+    expect(sql).toContain("schedule_occupancy_exactly_one_owner");
+    expect(sql).toContain("appointment_occupancy_guard");
   });
 
-  it("does not silently freeze the still-open slot cadence", () => {
-    expect(migrationSql()).not.toMatch(/\bslot_step_minutes\b/i);
+  it("stores the approved cadence explicitly without a silent default", () => {
+    const sql = migrationSql();
+    expect(sql).toContain("create table app_private.business_scheduling_policy");
+    expect(sql).toMatch(/slot_step_minutes\s+integer\s+not\s+null/i);
+    expect(sql).toContain("business_scheduling_policy_slot_step_approved");
+    expect(sql).not.toMatch(/slot_step_minutes\s+integer[^,]*default/i);
+  });
+
+  it("keeps public booking capability and idempotency material private", () => {
+    const sql = migrationSql();
+    expect(sql).toContain("octet_length(token_hash) = 32");
+    expect(sql).toContain("appointment_access_token_one_active_unique");
+    expect(sql).toContain("idempotency_request_business_operation_key_unique");
+    expect(sql).toContain("idempotency_request_envelope_shape");
+    expect(sql).not.toMatch(/raw_token|token_plaintext|pepper/i);
   });
 });

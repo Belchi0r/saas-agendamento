@@ -7,6 +7,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgSchema,
   smallint,
   text,
@@ -65,6 +66,27 @@ export const businesses = appPrivate.table(
   ],
 );
 
+export const businessSchedulingPolicies = appPrivate.table(
+  "business_scheduling_policy",
+  {
+    businessId: uuid("business_id").primaryKey().references(() => businesses.id, { onDelete: "restrict" }),
+    minimumLeadMinutes: integer("minimum_lead_minutes").notNull(),
+    bookingHorizonDays: integer("booking_horizon_days").notNull(),
+    slotStepMinutes: integer("slot_step_minutes").notNull(),
+    bufferMinutes: integer("buffer_minutes"),
+    cancellationEnabled: boolean("cancellation_enabled").notNull(),
+    cancellationNoticeMinutes: integer("cancellation_notice_minutes"),
+    configurationConfirmedAt: timestamp("configuration_confirmed_at", { withTimezone: true, mode: "date" }).notNull(),
+    version: integer("version").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("business_scheduling_policy_slot_step_approved", sql`${table.slotStepMinutes} = 15`),
+    check("business_scheduling_policy_minimum_lead_nonnegative", sql`${table.minimumLeadMinutes} >= 0`),
+    check("business_scheduling_policy_horizon_positive", sql`${table.bookingHorizonDays} > 0`),
+  ],
+);
+
 export const services = appPrivate.table(
   "service",
   {
@@ -107,6 +129,62 @@ export const services = appPrivate.table(
       sql`${table.durationMinutes} > 0`,
     ),
     check("service_version_positive", sql`${table.version} > 0`),
+  ],
+);
+
+export const customers = appPrivate.table(
+  "customer",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessId: uuid("business_id").notNull().references(() => businesses.id, { onDelete: "restrict" }),
+    displayName: text("display_name").notNull(),
+    whatsappE164: text("whatsapp_e164").notNull(),
+    anonymizedAt: timestamp("anonymized_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("customer_business_scope_unique").on(table.businessId, table.id),
+    index("customer_business_whatsapp_idx").on(table.businessId, table.whatsappE164),
+  ],
+);
+
+export const appointments = appPrivate.table(
+  "appointment",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessId: uuid("business_id").notNull().references(() => businesses.id, { onDelete: "restrict" }),
+    serviceId: uuid("service_id").notNull(),
+    customerId: uuid("customer_id").notNull(),
+    status: text("status").$type<"CONFIRMED" | "COMPLETED" | "CANCELLED" | "NO_SHOW">().notNull(),
+    origin: text("origin").$type<"PUBLIC" | "ADMIN">().notNull(),
+    version: integer("version").notNull().default(1),
+    serviceNameSnapshot: text("service_name_snapshot").notNull(),
+    serviceDescriptionSnapshot: text("service_description_snapshot"),
+    serviceDurationMinutesSnapshot: integer("service_duration_minutes_snapshot").notNull(),
+    servicePriceMinorSnapshot: integer("service_price_minor_snapshot").notNull(),
+    currencyCodeSnapshot: char("currency_code_snapshot", { length: 3 }).notNull(),
+    customerNameSnapshot: text("customer_name_snapshot").notNull(),
+    customerWhatsappSnapshot: text("customer_whatsapp_snapshot").notNull(),
+    scheduledStartAt: timestamp("scheduled_start_at", { withTimezone: true, mode: "date" }).notNull(),
+    scheduledEndAt: timestamp("scheduled_end_at", { withTimezone: true, mode: "date" }).notNull(),
+    occupiedStartAt: timestamp("occupied_start_at", { withTimezone: true, mode: "date" }).notNull(),
+    occupiedEndAt: timestamp("occupied_end_at", { withTimezone: true, mode: "date" }).notNull(),
+    timezoneSnapshot: text("timezone_snapshot").notNull(),
+    localDateSnapshot: date("local_date_snapshot", { mode: "string" }).notNull(),
+    localTimeSnapshot: time("local_time_snapshot", { precision: 0 }).notNull(),
+    utcOffsetMinutesSnapshot: integer("utc_offset_minutes_snapshot").notNull(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true, mode: "date" }),
+    cancellationActor: text("cancellation_actor").$type<"CUSTOMER" | "ADMIN">(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    foreignKey({ name: "appointment_service_fk", columns: [table.businessId, table.serviceId], foreignColumns: [services.businessId, services.id] }).onDelete("restrict"),
+    foreignKey({ name: "appointment_customer_fk", columns: [table.businessId, table.customerId], foreignColumns: [customers.businessId, customers.id] }).onDelete("restrict"),
+    unique("appointment_business_scope_unique").on(table.businessId, table.id),
+    index("appointment_business_start_idx").on(table.businessId, table.scheduledStartAt),
+    index("appointment_business_customer_start_idx").on(table.businessId, table.customerId, table.scheduledStartAt),
   ],
 );
 
@@ -308,7 +386,8 @@ export const scheduleOccupancies = appPrivate.table(
     businessId: uuid("business_id")
       .notNull()
       .references(() => businesses.id, { onDelete: "restrict" }),
-    blockedPeriodId: uuid("blocked_period_id").notNull(),
+    blockedPeriodId: uuid("blocked_period_id"),
+    appointmentId: uuid("appointment_id"),
     occupiedPeriod: tstzrange("occupied_period").notNull(),
     releasedAt: timestamp("released_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -323,6 +402,11 @@ export const scheduleOccupancies = appPrivate.table(
     })
       .onUpdate("restrict")
       .onDelete("restrict"),
+    foreignKey({
+      name: "schedule_occupancy_appointment_fk",
+      columns: [table.businessId, table.appointmentId],
+      foreignColumns: [appointments.businessId, appointments.id],
+    }).onDelete("restrict"),
     uniqueIndex("schedule_occupancy_blocked_period_unique").on(
       table.blockedPeriodId,
     ),
@@ -330,5 +414,68 @@ export const scheduleOccupancies = appPrivate.table(
       table.businessId,
       table.releasedAt,
     ),
+    uniqueIndex("schedule_occupancy_appointment_unique")
+      .on(table.appointmentId)
+      .where(sql`${table.appointmentId} is not null`),
+    check("schedule_occupancy_exactly_one_owner", sql`num_nonnulls(${table.appointmentId}, ${table.blockedPeriodId}) = 1`),
+  ],
+);
+
+export const appointmentEvents = appPrivate.table(
+  "appointment_event",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    appointmentId: uuid("appointment_id").notNull().references(() => appointments.id, { onDelete: "restrict" }),
+    appointmentVersion: integer("appointment_version").notNull(),
+    eventType: text("event_type").notNull(),
+    actorType: text("actor_type").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    fromStatus: text("from_status"), toStatus: text("to_status"),
+    fromStartAt: timestamp("from_start_at", { withTimezone: true, mode: "date" }),
+    toStartAt: timestamp("to_start_at", { withTimezone: true, mode: "date" }),
+    fromEndAt: timestamp("from_end_at", { withTimezone: true, mode: "date" }),
+    toEndAt: timestamp("to_end_at", { withTimezone: true, mode: "date" }),
+    details: jsonb("details").$type<Record<string, unknown>>().notNull(),
+  },
+  (table) => [unique("appointment_event_appointment_version_unique").on(table.appointmentId, table.appointmentVersion)],
+);
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+export const appointmentAccessTokens = appPrivate.table(
+  "appointment_access_token",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    appointmentId: uuid("appointment_id").notNull().references(() => appointments.id, { onDelete: "restrict" }),
+    tokenHash: bytea("token_hash").notNull(), tokenVersion: integer("token_version").notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true, mode: "date" }).notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: "date" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }), rotationReason: text("rotation_reason"),
+  },
+  (table) => [
+    unique("appointment_access_token_hash_unique").on(table.tokenHash),
+    uniqueIndex("appointment_access_token_one_active_unique").on(table.appointmentId).where(sql`${table.revokedAt} is null`),
+  ],
+);
+
+export const idempotencyRequests = appPrivate.table(
+  "idempotency_request",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessId: uuid("business_id").notNull().references(() => businesses.id, { onDelete: "restrict" }),
+    operation: text("operation").notNull(), keyHash: bytea("key_hash").notNull(),
+    requestFingerprint: bytea("request_fingerprint").notNull(), fingerprintVersion: text("fingerprint_version").notNull(),
+    status: text("status").$type<"SUCCEEDED">().notNull(), appointmentId: uuid("appointment_id"),
+    responseStatus: integer("response_status").notNull(), responseEnvelope: bytea("response_envelope"),
+    envelopeNonce: bytea("envelope_nonce"), envelopeAuthTag: bytea("envelope_auth_tag"),
+    envelopeKeyVersion: text("envelope_key_version"),
+    envelopeExpiresAt: timestamp("envelope_expires_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    foreignKey({ name: "idempotency_request_appointment_fk", columns: [table.businessId, table.appointmentId], foreignColumns: [appointments.businessId, appointments.id] }).onDelete("restrict"),
+    unique("idempotency_request_business_operation_key_unique").on(table.businessId, table.operation, table.keyHash),
   ],
 );

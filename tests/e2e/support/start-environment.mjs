@@ -15,6 +15,7 @@ const RUNTIME_LOGIN = "barber_runtime_e2e_login";
 const RUNTIME_PASSWORD = "e2e-runtime-password";
 const APP_ORIGIN = "http://127.0.0.1:3100";
 const AUTH_ORIGIN = "http://127.0.0.1:3201";
+const TEST_KEY_32_BYTES = Buffer.alloc(32, 7).toString("base64url");
 
 const adminDatabaseUrl = process.env.TEST_DATABASE_URL;
 assert.ok(adminDatabaseUrl, "TEST_DATABASE_URL is required for the E2E environment");
@@ -40,17 +41,28 @@ try {
   `);
   await adminPool.query(`
     begin;
+    update app_private.appointment
+       set status = 'CANCELLED',
+           cancelled_at = coalesce(cancelled_at, clock_timestamp()),
+           cancellation_actor = coalesce(cancellation_actor, 'ADMIN')
+     where status = 'CONFIRMED';
     update app_private.blocked_period set active = false where active;
     update app_private.schedule_occupancy
        set released_at = coalesce(released_at, clock_timestamp());
     commit;
   `);
+  await adminPool.query("delete from app_private.idempotency_request");
+  await adminPool.query("delete from app_private.appointment_access_token");
+  await adminPool.query("delete from app_private.appointment_event");
   await adminPool.query("delete from app_private.schedule_occupancy");
+  await adminPool.query("delete from app_private.appointment");
+  await adminPool.query("delete from app_private.customer");
   await adminPool.query("delete from app_private.blocked_period");
   await adminPool.query("delete from app_private.exception_working_window");
   await adminPool.query("delete from app_private.date_availability_exception");
   await adminPool.query("delete from app_private.weekly_break");
   await adminPool.query("delete from app_private.weekly_working_window");
+  await adminPool.query("delete from app_private.business_scheduling_policy");
   await adminPool.query("delete from app_private.service");
   await adminPool.query("delete from app_private.business");
   await adminPool.query(
@@ -72,6 +84,21 @@ try {
       ADMIN_USER_ID,
     ],
   );
+  await adminPool.query(
+    `
+      insert into app_private.business_scheduling_policy (
+        business_id,
+        minimum_lead_minutes,
+        booking_horizon_days,
+        slot_step_minutes,
+        buffer_minutes,
+        cancellation_enabled,
+        cancellation_notice_minutes,
+        configuration_confirmed_at
+      ) values ($1, 0, 30, 15, null, false, null, clock_timestamp())
+    `,
+    [BUSINESS_ID],
+  );
 } finally {
   await adminPool.end();
 }
@@ -89,6 +116,13 @@ const nextEnvironment = {
   NEXT_PUBLIC_SUPABASE_URL: AUTH_ORIGIN,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     "sb_publishable_e2e_local_only_123456",
+  BOOKING_TOKEN_PEPPER: TEST_KEY_32_BYTES,
+  IDEMPOTENCY_PEPPER: TEST_KEY_32_BYTES,
+  BOOKING_RESPONSE_ENVELOPE_KEYS_JSON: JSON.stringify({
+    "e2e-v1": TEST_KEY_32_BYTES,
+  }),
+  BOOKING_RESPONSE_ENVELOPE_ACTIVE_KEY_VERSION: "e2e-v1",
+  CAPABILITY_COOKIE_SIGNING_KEY: TEST_KEY_32_BYTES,
 };
 
 function base64url(value) {
@@ -205,6 +239,13 @@ const authServer = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/__e2e/shutdown") {
+    response.writeHead(204);
+    response.end();
+    setImmediate(() => void close(0));
+    return;
+  }
+
   sendJson(response, 404, { code: "not_found", msg: "Not found" });
 });
 
@@ -264,6 +305,7 @@ async function close(exitCode = 0) {
   if (closing) return;
   closing = true;
   next.kill();
+  authServer.closeAllConnections();
   await new Promise((resolve) => authServer.close(resolve));
   process.exit(exitCode);
 }

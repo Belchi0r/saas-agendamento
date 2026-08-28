@@ -14,6 +14,10 @@ export interface BusinessScopeReader {
   findByAdminAuthUserId(authUserId: string): Promise<BusinessIdentity | null>;
 }
 
+export interface OperationalBusinessScopeReader {
+  findOperationalSingleton(): Promise<BusinessIdentity[]>;
+}
+
 export async function resolvePublicBusinessScope(
   reader: BusinessScopeReader,
 ): Promise<BusinessScope> {
@@ -48,4 +52,21 @@ export async function resolveAdminBusinessScope(
   }
 
   return businessScopeFromServer(business.id, "admin-auth-user");
+}
+
+export async function resolveOperationalBusinessScope(
+  reader: OperationalBusinessScopeReader,
+): Promise<BusinessScope> {
+  const businesses = await reader.findOperationalSingleton();
+  const business = businesses[0];
+  if (businesses.length !== 1 || !business) {
+    throw new ApplicationError(
+      businesses.length === 0
+        ? "BUSINESS_SCOPE_NOT_FOUND"
+        : "BUSINESS_SCOPE_AMBIGUOUS",
+      "Não foi possível identificar o negócio.",
+      503,
+    );
+  }
+  return businessScopeFromServer(business.id, "public-singleton");
 }

@@ -39,6 +39,14 @@ export class PostgresBusinessRepository implements BusinessScopeReader {
       .limit(2);
   }
 
+  async findOperationalSingleton(): Promise<BusinessIdentity[]> {
+    return this.database
+      .select({ id: businesses.id, adminAuthUserId: businesses.adminAuthUserId })
+      .from(businesses)
+      .orderBy(asc(businesses.id))
+      .limit(2);
+  }
+
   async findByAdminAuthUserId(
     authUserId: string,
   ): Promise<BusinessIdentity | null> {

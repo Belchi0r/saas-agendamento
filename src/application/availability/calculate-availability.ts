@@ -3,6 +3,7 @@ import type { BlockedPeriod } from "@/domain/availability/blocked-period";
 import {
   isValidLocalDate,
   localTimeToSeconds,
+  secondsToLocalTime,
   subtractLocalIntervals,
   type LocalTimeInterval,
 } from "@/domain/availability/local-interval";
@@ -32,7 +33,13 @@ export type RejectedAvailabilityCandidate = Readonly<{
   reason:
     | "NONEXISTENT_LOCAL_TIME"
     | "OUTSIDE_EFFECTIVE_WINDOW"
-    | "BLOCKED_PERIOD_CONFLICT";
+    | "BLOCKED_PERIOD_CONFLICT"
+    | "SCHEDULE_OCCUPANCY_CONFLICT";
+}>;
+
+export type OccupiedScheduleInterval = Readonly<{
+  startAtUtc: string;
+  endAtUtc: string;
 }>;
 
 export type CandidateAvailabilityResult = Readonly<{
@@ -55,6 +62,7 @@ export function calculateAvailabilityForCandidates(input: Readonly<{
   weeklyBreaks: readonly WeeklyBreak[];
   dateException: DateAvailabilityException | null;
   blockedPeriods: readonly BlockedPeriod[];
+  scheduleOccupancies?: readonly OccupiedScheduleInterval[];
 }>): CandidateAvailabilityResult {
   if (
     !isValidLocalDate(input.localDate) ||
@@ -162,6 +170,23 @@ export function calculateAvailabilityForCandidates(input: Readonly<{
       continue;
     }
 
+    if (
+      input.scheduleOccupancies?.some((occupancy) =>
+        utcIntervalsOverlap(
+          resolution.instantUtc,
+          end.endInstantUtc,
+          occupancy.startAtUtc,
+          occupancy.endAtUtc,
+        ),
+      )
+    ) {
+      rejectedCandidates.push({
+        startLocalTime: candidateLocalTime,
+        reason: "SCHEDULE_OCCUPANCY_CONFLICT",
+      });
+      continue;
+    }
+
     availableCandidates.push({
       startLocalTime: candidateLocalTime,
       startAtUtc: resolution.instantUtc,
@@ -187,6 +212,52 @@ export function calculateAvailabilityForCandidates(input: Readonly<{
     effectiveWindows,
     availableCandidates,
     rejectedCandidates,
+  };
+}
+
+export type PublicAvailabilityResult = Omit<CandidateAvailabilityResult, "cadenceApplied"> &
+  Readonly<{ cadenceApplied: true; slotStepMinutes: number }>;
+
+export function enumeratePublicAvailability(input: Readonly<{
+  localDate: string;
+  timezone: string;
+  serviceDurationMinutes: number;
+  slotStepMinutes: number;
+  minimumLeadMinutes: number;
+  bookingHorizonDays: number;
+  nowUtc: string;
+  weeklyWorkingWindows: readonly WeeklyWorkingWindow[];
+  weeklyBreaks: readonly WeeklyBreak[];
+  dateException: DateAvailabilityException | null;
+  blockedPeriods: readonly BlockedPeriod[];
+  scheduleOccupancies: readonly OccupiedScheduleInterval[];
+}>): PublicAvailabilityResult {
+  if (input.slotStepMinutes !== 15 || !Number.isSafeInteger(input.minimumLeadMinutes) || input.minimumLeadMinutes < 0 || !Number.isSafeInteger(input.bookingHorizonDays) || input.bookingHorizonDays <= 0) {
+    throw new ApplicationError("BOOKING_POLICY_INVALID", "A agenda pública ainda não está configurada.", 503);
+  }
+  const timezone = assertIanaTimeZone(input.timezone);
+  const now = Temporal.Instant.from(input.nowUtc);
+  const today = now.toZonedDateTimeISO(timezone).toPlainDate();
+  const requestedDate = Temporal.PlainDate.from(input.localDate);
+  const horizonEnd = today.add({ days: input.bookingHorizonDays });
+  if (Temporal.PlainDate.compare(requestedDate, today) < 0 || Temporal.PlainDate.compare(requestedDate, horizonEnd) > 0) {
+    throw new ApplicationError("BOOKING_DATE_OUTSIDE_HORIZON", "Escolha uma data dentro do período disponível.", 400);
+  }
+  const basis = calculateAvailabilityForCandidates({ ...input, candidateLocalTimes: [] });
+  const stepSeconds = input.slotStepMinutes * 60;
+  const candidates = basis.effectiveWindows.flatMap((window) => {
+    const values: string[] = [];
+    for (let current = localTimeToSeconds(window.startLocalTime)!; current < localTimeToSeconds(window.endLocalTime)!; current += stepSeconds) values.push(secondsToLocalTime(current));
+    return values;
+  });
+  const calculated = calculateAvailabilityForCandidates({ ...input, candidateLocalTimes: candidates });
+  const earliest = now.add({ minutes: input.minimumLeadMinutes });
+  return {
+    ...calculated,
+    cadenceApplied: true,
+    slotStepMinutes: input.slotStepMinutes,
+    availableCandidates: calculated.availableCandidates.filter((candidate) =>
+      Temporal.Instant.compare(Temporal.Instant.from(candidate.startAtUtc), earliest) >= 0),
   };
 }
 

@@ -124,3 +124,10 @@ export function elapsedEnd(
       .toString({ smallestUnit: "minute" }),
   };
 }
+
+export function offsetToMinutes(offset: string): number {
+  const match = /^([+-])(\d{2}):(\d{2})$/.exec(offset);
+  if (!match) throw new RangeError("Invalid UTC offset.");
+  const sign = match[1] === "-" ? -1 : 1;
+  return sign * (Number(match[2]) * 60 + Number(match[3]));
+}

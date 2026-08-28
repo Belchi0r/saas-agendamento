@@ -36,17 +36,28 @@ databaseSuite("Sprint 2 weekly availability on real PostgreSQL", () => {
   beforeEach(async () => {
     await pool.query(`
       begin;
+      update app_private.appointment
+         set status = 'CANCELLED',
+             cancelled_at = coalesce(cancelled_at, clock_timestamp()),
+             cancellation_actor = coalesce(cancellation_actor, 'ADMIN')
+       where status = 'CONFIRMED';
       update app_private.blocked_period set active = false where active;
       update app_private.schedule_occupancy
          set released_at = coalesce(released_at, clock_timestamp());
       commit;
     `);
+    await pool.query("delete from app_private.idempotency_request");
+    await pool.query("delete from app_private.appointment_access_token");
+    await pool.query("delete from app_private.appointment_event");
     await pool.query("delete from app_private.schedule_occupancy");
+    await pool.query("delete from app_private.appointment");
+    await pool.query("delete from app_private.customer");
     await pool.query("delete from app_private.blocked_period");
     await pool.query("delete from app_private.exception_working_window");
     await pool.query("delete from app_private.date_availability_exception");
     await pool.query("delete from app_private.weekly_break");
     await pool.query("delete from app_private.weekly_working_window");
+    await pool.query("delete from app_private.business_scheduling_policy");
     await pool.query("delete from app_private.service");
     await pool.query("delete from app_private.business");
     await pool.query(
