@@ -272,7 +272,10 @@ export function WeeklyAvailabilityManager({
         expectedAvailabilityVersion: availability.availabilityVersion,
       },
     );
-    if (applied) setConfirmingReplacement(false);
+    if (applied) {
+      setConfirmingReplacement(false);
+      setQuickDraft((current) => ({ ...current, weekdays: [] }));
+    }
   }
 
   async function submitQuickDraft(event: FormEvent<HTMLFormElement>) {
@@ -414,6 +417,24 @@ export function WeeklyAvailabilityManager({
     <div className="mt-8">
       <WeeklySummary availability={availability} />
 
+      {availability.futureConfirmedAppointmentsOutsideAvailability > 0 ? (
+        <section
+          className="border-b border-[var(--border)] py-6"
+          aria-labelledby="appointment-impact-title"
+        >
+          <div className="border-l-4 border-[var(--danger)] bg-[var(--surface)] p-4">
+            <h2 id="appointment-impact-title" className="font-semibold">
+              Agendamentos fora dos horários atuais
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+              {availability.futureConfirmedAppointmentsOutsideAvailability === 1
+                ? "1 agendamento futuro continua confirmado e com o horário reservado."
+                : `${availability.futureConfirmedAppointmentsOutsideAvailability} agendamentos futuros continuam confirmados e com os horários reservados.`}
+            </p>
+          </div>
+        </section>
+      ) : null}
+
       <section className="border-b border-[var(--border)] py-7" aria-labelledby="quick-week-title">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -459,6 +480,13 @@ export function WeeklyAvailabilityManager({
                 </label>
               ))}
             </div>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]" aria-live="polite">
+              {quickDraft.weekdays.length === 0
+                ? "Nenhum dia selecionado."
+                : `Será aplicado em: ${WEEKDAYS.filter((weekday) =>
+                    quickDraft.weekdays.includes(weekday.value),
+                  ).map((weekday) => weekday.name).join(", ")}. Os demais dias não serão alterados.`}
+            </p>
           </fieldset>
 
           <fieldset className="mt-5">
@@ -688,6 +716,7 @@ function WeeklySummary({
           return (
             <li
               key={weekday.value}
+              aria-label={`Resumo de ${weekday.name}`}
               className="grid grid-cols-[3.5rem_1fr] border-b border-[var(--border)] py-3"
             >
               <strong>{weekday.name.slice(0, 3)}</strong>

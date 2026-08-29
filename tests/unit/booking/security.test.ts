@@ -8,6 +8,7 @@ import {
   encryptBookingEnvelope,
   generateManagementToken,
   secretHmac,
+  serializeCapabilityCookie,
   signCapabilityCookie,
   verifyCapabilityCookie,
 } from "@/infrastructure/security/booking-secrets";
@@ -31,5 +32,11 @@ describe("booking capability cryptography", () => {
     const encrypted = encryptBookingEnvelope({ managementToken: "secret" }, key, "v1", "aad");
     expect(decryptBookingEnvelope(encrypted, key, "aad")).toEqual({ managementToken: "secret" });
     expect(() => decryptBookingEnvelope(encrypted, key, "wrong-aad")).toThrow();
+  });
+
+  it("scopes the short capability to the same site while allowing secure home reload recognition", () => {
+    expect(serializeCapabilityCookie("signed-capability")).toBe(
+      "booking_cap=signed-capability; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Strict",
+    );
   });
 });

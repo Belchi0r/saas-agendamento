@@ -1,14 +1,18 @@
 import { randomBytes } from "node:crypto";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
 import { confirmPublicBooking, exchangeManagementToken, getManagedAppointment, listPublicBookingAvailability, listPublicBookingDateOptions, revokeManagementToken, rotateManagementToken } from "@/application/booking/public-booking-use-cases";
+import { replaceWeeklyDays } from "@/application/availability/weekly-availability-use-cases";
 import type { PublicBookingCommand } from "@/domain/booking/public-booking";
 import { businessScopeFromServer } from "@/domain/business/business-scope";
 import type { BookingSecrets } from "@/infrastructure/security/booking-secrets";
 import { PostgresPublicBookingRepository } from "@/persistence/booking/postgres-public-booking-repository";
+import { PostgresWeeklyAvailabilityRepository } from "@/persistence/availability/postgres-weekly-availability-repository";
+import * as schema from "@/persistence/database/schema";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const databaseSuite = databaseUrl ? describe : describe.skip;
@@ -31,6 +35,10 @@ databaseSuite("Sprint 4 public booking on real PostgreSQL", () => {
   runtimeUrl.password = RUNTIME_PASSWORD;
   const runtimePool = new Pool({ connectionString: runtimeUrl.toString(), max: 12 });
   const repository = new PostgresPublicBookingRepository(runtimePool, businessScopeFromServer(BUSINESS, "public-singleton"));
+  const weeklyRepository = new PostgresWeeklyAvailabilityRepository(
+    drizzle(runtimePool, { schema }),
+    businessScopeFromServer(BUSINESS, "admin-auth-user"),
+  );
 
   beforeAll(async () => {
     await pool.query(`
@@ -145,10 +153,141 @@ databaseSuite("Sprint 4 public booking on real PostgreSQL", () => {
     await expect(exchangeManagementToken(repository, rotated, secrets, NOW)).rejects.toMatchObject({ code:"MANAGEMENT_LINK_INVALID" });
     expect((await pool.query(`select count(*)::int count from app_private.appointment_access_token where revoked_at is null`)).rows[0]?.count).toBe(0);
   });
+
+  it("keeps an existing booking and occupancy after working hours move past it", async () => {
+    const booking = await confirmPublicBooking(
+      repository,
+      command("14:00", "Cliente preservado", "+5561999990010"),
+      "idem-config-preserve-01",
+      secrets,
+      "http://localhost:3000",
+      NOW,
+    );
+
+    const changed = await replaceWeeklyDays(weeklyRepository, {
+      weekdays: [1],
+      workingStartLocalTime: "15:00",
+      workingEndLocalTime: "20:00",
+      breakStartLocalTime: null,
+      breakEndLocalTime: null,
+      confirmReplaceExisting: true,
+      expectedAvailabilityVersion: 1,
+    });
+
+    expect(changed.futureConfirmedAppointmentsOutsideAvailability).toBe(1);
+    const persisted = await persistedAppointmentState(booking.appointment.appointmentId);
+    expect(persisted).toEqual({ status: "CONFIRMED", released_at: null });
+    await expect(confirmPublicBooking(
+      repository,
+      command("14:00", "Concorrente", "+5561999990011"),
+      "idem-config-competitor-1",
+      secrets,
+      "http://localhost:3000",
+      NOW,
+    )).rejects.toMatchObject({ code: "BOOKING_SLOT_UNAVAILABLE", status: 409 });
+  });
+
+  it("keeps a 13:00 booking when a 12:00–14:00 break is later configured", async () => {
+    await pool.query(
+      "update app_private.service set duration_minutes=50, version=2 where id=$1",
+      [SERVICE],
+    );
+    const booking = await confirmPublicBooking(
+      repository,
+      command("13:00", "Cliente na pausa", "+5561999990012", 50, 2),
+      "idem-break-preserve-001",
+      secrets,
+      "http://localhost:3000",
+      NOW,
+    );
+
+    const changed = await replaceWeeklyDays(weeklyRepository, {
+      weekdays: [1],
+      workingStartLocalTime: "09:00",
+      workingEndLocalTime: "18:00",
+      breakStartLocalTime: "12:00",
+      breakEndLocalTime: "14:00",
+      confirmReplaceExisting: true,
+      expectedAvailabilityVersion: 1,
+    });
+
+    expect(changed.futureConfirmedAppointmentsOutsideAvailability).toBe(1);
+    expect(await persistedAppointmentState(booking.appointment.appointmentId))
+      .toEqual({ status: "CONFIRMED", released_at: null });
+    await expect(confirmPublicBooking(
+      repository,
+      command("13:00", "Concorrente", "+5561999990013", 50, 2),
+      "idem-break-competitor01",
+      secrets,
+      "http://localhost:3000",
+      NOW,
+    )).rejects.toMatchObject({ code: "BOOKING_SLOT_UNAVAILABLE", status: 409 });
+  });
+
+  it("preserves an existing booking across CLOSED and rejects an overlapping block", async () => {
+    const booking = await confirmPublicBooking(
+      repository,
+      command("10:00", "Cliente protegido", "+5561999990014"),
+      "idem-rule-preserve-0001",
+      secrets,
+      "http://localhost:3000",
+      NOW,
+    );
+    await pool.query(
+      "insert into app_private.date_availability_exception (business_id,local_date,mode) values ($1,'2026-08-31','CLOSED')",
+      [BUSINESS],
+    );
+
+    await expect(confirmPublicBooking(
+      repository,
+      command("10:00", "Concorrente", "+5561999990015"),
+      "idem-closed-competitor1",
+      secrets,
+      "http://localhost:3000",
+      NOW,
+    )).rejects.toMatchObject({ code: "BOOKING_SLOT_UNAVAILABLE", status: 409 });
+
+    const client = await pool.connect();
+    let sqlstate: string | undefined;
+    try {
+      await client.query("begin");
+      const blockId = "40000000-0000-4000-8000-000000000099";
+      await client.query(
+        "insert into app_private.blocked_period (id,business_id,start_at,end_at,timezone_snapshot) values ($1,$2,'2026-08-31T13:00:00Z','2026-08-31T14:30:00Z','America/Sao_Paulo')",
+        [blockId, BUSINESS],
+      );
+      await client.query(
+        "insert into app_private.schedule_occupancy (business_id,blocked_period_id,occupied_period) values ($1,$2,tstzrange('2026-08-31T13:00:00Z','2026-08-31T14:30:00Z','[)'))",
+        [BUSINESS, blockId],
+      );
+      await client.query("commit");
+    } catch (error) {
+      sqlstate = (error as { code?: string }).code;
+      await client.query("rollback");
+    } finally {
+      client.release();
+    }
+
+    expect(sqlstate).toBe("23P01");
+    expect(await persistedAppointmentState(booking.appointment.appointmentId))
+      .toEqual({ status: "CONFIRMED", released_at: null });
+  });
+
+  async function persistedAppointmentState(appointmentId: string) {
+    const result = await pool.query<{ status: string; released_at: Date | null }>(
+      `select appointment.status, occupancy.released_at
+         from app_private.appointment as appointment
+         join app_private.schedule_occupancy as occupancy
+           on occupancy.appointment_id = appointment.id
+        where appointment.business_id = $1 and appointment.id = $2`,
+      [BUSINESS, appointmentId],
+    );
+    return result.rows[0];
+  }
 });
 
-function command(localTime: string, customerName: string, whatsappE164: string): PublicBookingCommand {
-  return { serviceId:SERVICE,localDate:"2026-08-31",localTime,customerName,whatsappE164,reviewedService:{version:1,name:"Corte essencial",durationMinutes:45,priceMinor:5000,currencyCode:"BRL"} };
+function command(localTime: string, customerName: string, whatsappE164: string, durationMinutes = 45, version = 1): PublicBookingCommand {
+  return { serviceId:SERVICE,localDate:"2026-08-31",localTime,customerName,whatsappE164,reviewedService:{version,name:"Corte essencial",durationMinutes,priceMinor:5000,currencyCode:"BRL"} };
 }
 
 async function observeBookingLock(pool: Pool): Promise<void> {

@@ -25,6 +25,7 @@ import { findPostgresError } from "../database/postgres-error";
 import type * as schema from "../database/schema";
 
 type AppDatabase = NodePgDatabase<typeof schema>;
+type AppointmentImpactRow = Readonly<{ count: number }>;
 
 function normalizeDatabaseTime(value: string): string {
   return value.endsWith(":00") ? value.slice(0, 5) : value;
@@ -115,7 +116,7 @@ export class PostgresWeeklyAvailabilityRepository
 
     if (!business) throw this.businessNotFound();
 
-    const [workingRows, breakRows] = await Promise.all([
+    const [workingRows, breakRows, appointmentImpact] = await Promise.all([
       this.database
         .select()
         .from(weeklyWorkingWindows)
@@ -134,11 +135,13 @@ export class PostgresWeeklyAvailabilityRepository
           asc(weeklyBreaks.startLocalTime),
           asc(weeklyBreaks.id),
         ),
+      this.countFutureConfirmedAppointmentsOutsideAvailability(this.database),
     ]);
 
     return {
       timezone: business.timezone,
       availabilityVersion: business.availabilityVersion,
+      futureConfirmedAppointmentsOutsideAvailability: appointmentImpact,
       workingWindows: workingRows.map(toWorkingWindow),
       breaks: breakRows.map(toWeeklyBreak),
     };
@@ -218,7 +221,7 @@ export class PostgresWeeklyAvailabilityRepository
             ),
           );
 
-        const [workingRows, breakRows] = await Promise.all([
+        const [workingRows, breakRows, appointmentImpact] = await Promise.all([
           transaction
             .select()
             .from(weeklyWorkingWindows)
@@ -237,11 +240,13 @@ export class PostgresWeeklyAvailabilityRepository
               asc(weeklyBreaks.startLocalTime),
               asc(weeklyBreaks.id),
             ),
+          this.countFutureConfirmedAppointmentsOutsideAvailability(transaction),
         ]);
 
         return {
           timezone: business.timezone,
           availabilityVersion: nextVersion,
+          futureConfirmedAppointmentsOutsideAvailability: appointmentImpact,
           workingWindows: workingRows.map(toWorkingWindow),
           breaks: breakRows.map(toWeeklyBreak),
         };
@@ -261,6 +266,67 @@ export class PostgresWeeklyAvailabilityRepository
 
       throw error;
     }
+  }
+
+  private async countFutureConfirmedAppointmentsOutsideAvailability(
+    database: AppDatabase | Parameters<
+      Parameters<AppDatabase["transaction"]>[0]
+    >[0],
+  ): Promise<number> {
+    const result = await database.execute(sql<AppointmentImpactRow>`
+      select count(*)::int as count
+      from app_private.appointment as appointment
+      left join app_private.date_availability_exception as exception
+        on exception.business_id = appointment.business_id
+       and exception.local_date = appointment.local_date_snapshot
+      where appointment.business_id = ${this.scope.businessId}
+        and appointment.status = 'CONFIRMED'
+        and appointment.scheduled_start_at >= clock_timestamp()
+        and not (
+          case
+            when exception.mode = 'CLOSED' then false
+            when exception.mode = 'REPLACE' then exists (
+              select 1
+              from app_private.exception_working_window as replacement
+              where replacement.date_exception_id = exception.id
+                and appointment.local_date_snapshot + appointment.local_time_snapshot
+                  >= appointment.local_date_snapshot + replacement.start_local_time
+                and (
+                  appointment.local_date_snapshot + appointment.local_time_snapshot
+                  + make_interval(mins => appointment.service_duration_minutes_snapshot)
+                ) <= appointment.local_date_snapshot + replacement.end_local_time
+            )
+            else exists (
+              select 1
+              from app_private.weekly_working_window as working_window
+              where working_window.business_id = appointment.business_id
+                and working_window.weekday = extract(
+                  isodow from appointment.local_date_snapshot
+                )::int
+                and appointment.local_date_snapshot + appointment.local_time_snapshot
+                  >= appointment.local_date_snapshot + working_window.start_local_time
+                and (
+                  appointment.local_date_snapshot + appointment.local_time_snapshot
+                  + make_interval(mins => appointment.service_duration_minutes_snapshot)
+                ) <= appointment.local_date_snapshot + working_window.end_local_time
+                and not exists (
+                  select 1
+                  from app_private.weekly_break as weekly_break
+                  where weekly_break.business_id = appointment.business_id
+                    and weekly_break.weekday = working_window.weekday
+                    and appointment.local_date_snapshot + appointment.local_time_snapshot
+                      < appointment.local_date_snapshot + weekly_break.end_local_time
+                    and (
+                      appointment.local_date_snapshot + appointment.local_time_snapshot
+                      + make_interval(mins => appointment.service_duration_minutes_snapshot)
+                    ) > appointment.local_date_snapshot + weekly_break.start_local_time
+                )
+            )
+          end
+        )
+    `);
+
+    return Number((result.rows as unknown as AppointmentImpactRow[])[0]?.count ?? 0);
   }
 
   private async persistMutation(

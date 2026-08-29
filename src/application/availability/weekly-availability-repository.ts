@@ -8,6 +8,7 @@ import type {
 export type WeeklyAvailabilitySnapshot = Readonly<{
   timezone: string | null;
   availabilityVersion: number;
+  futureConfirmedAppointmentsOutsideAvailability: number;
   workingWindows: readonly WeeklyWorkingWindow[];
   breaks: readonly WeeklyBreak[];
 }>;

@@ -16,6 +16,7 @@ import { businessScopeFromServer } from "@/domain/business/business-scope";
 const snapshot: WeeklyAvailabilitySnapshot = {
   timezone: "America/Sao_Paulo",
   availabilityVersion: 2,
+  futureConfirmedAppointmentsOutsideAvailability: 0,
   workingWindows: [],
   breaks: [],
 };
@@ -122,5 +123,34 @@ describe("weekly availability application use cases", () => {
     );
     const mutation = vi.mocked(adapter.applyMutation).mock.calls[0]?.[0];
     expect(mutation?.kind === "replace-days" && mutation.replacements).toHaveLength(5);
+  });
+
+  it.each([
+    { weekdays: [1, 2, 3, 4, 5, 6], label: "segunda a sábado" },
+    { weekdays: [1, 2, 3, 4, 5], label: "segunda a sexta" },
+    { weekdays: [1, 3, 6], label: "dias descontínuos" },
+  ] as const)("keeps the exact selected set for $label", async ({ weekdays }) => {
+    const adapter = repository();
+    await replaceWeeklyDays(adapter, {
+      weekdays,
+      workingStartLocalTime: "08:00",
+      workingEndLocalTime: "20:00",
+      breakStartLocalTime: "12:00",
+      breakEndLocalTime: "14:00",
+      confirmReplaceExisting: false,
+      expectedAvailabilityVersion: 2,
+    });
+
+    const mutation = vi.mocked(adapter.applyMutation).mock.calls[0]?.[0];
+    expect(
+      mutation?.kind === "replace-days"
+        ? mutation.replacements.map((item) => item.weekday)
+        : [],
+    ).toEqual(weekdays);
+    expect(
+      mutation?.kind === "replace-days"
+        ? mutation.replacements.map((item) => item.weeklyBreak?.startLocalTime)
+        : [],
+    ).toEqual(weekdays.map(() => "12:00"));
   });
 });

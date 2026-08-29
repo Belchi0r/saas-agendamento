@@ -2,7 +2,10 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { PublicServiceCatalog } from "@/components/public/service-catalog";
+import {
+  establishManagementAccess,
+  PublicServiceCatalog,
+} from "@/components/public/service-catalog";
 
 describe("public Service catalog", () => {
   afterEach(() => {
@@ -151,6 +154,49 @@ describe("public Service catalog", () => {
     expect(
       screen.getByRole("heading", { name: "Nenhum serviço disponível no momento." }),
     ).toBeInTheDocument();
+  });
+
+  it("shows an existing appointment only when the server provides a capability-backed summary", () => {
+    render(
+      <PublicServiceCatalog
+        business={{ publicName: "Estúdio Horizonte", publicDescription: null }}
+        services={[]}
+        existingAppointment={{
+          serviceName: "Sessão essencial",
+          localDate: "2026-09-01",
+          localTime: "14:00",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Você tem um agendamento" })).toBeVisible();
+    expect(screen.getByText("Sessão essencial · 01/09/2026 às 14:00")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Ver meu agendamento" })).toHaveAttribute(
+      "href",
+      "/manage",
+    );
+  });
+
+  it("exchanges the fragment capability without browser storage and degrades safely", async () => {
+    const fetcher = vi.fn().mockResolvedValue({ ok: true });
+    const token = "a".repeat(43);
+
+    await expect(establishManagementAccess(
+      `http://localhost:3000/manage#token=${token}`,
+      fetcher as unknown as typeof fetch,
+    )).resolves.toBe(true);
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/public/manage/exchange",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ token }),
+      }),
+    );
+    await expect(establishManagementAccess(
+      "http://localhost:3000/manage",
+      fetcher as unknown as typeof fetch,
+    )).resolves.toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });
 

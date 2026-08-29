@@ -27,6 +27,9 @@ export type CapabilityCookiePayload = Readonly<{
 export function generateManagementToken(): string {
   return randomBytes(BOOKING_TOKEN_BYTES).toString("base64url");
 }
+export function serializeCapabilityCookie(value: string): string {
+  return `${CAPABILITY_COOKIE_NAME}=${value}; Path=/; Max-Age=${CAPABILITY_COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict`;
+}
 export function secretHmac(secret: string, pepper: Buffer): Buffer {
   return createHmac("sha256", pepper).update(secret, "utf8").digest();
 }

@@ -373,4 +373,30 @@ databaseSuite("Sprint 2 weekly availability on real PostgreSQL", () => {
       )).toBe(true);
     });
   });
+
+  it.each([
+    ["segunda a sábado", [1, 2, 3, 4, 5, 6]],
+    ["segunda a sexta", [1, 2, 3, 4, 5]],
+    ["dias descontínuos", [1, 3, 6]],
+  ] as const)("persists only the selected weekdays for %s", async (_label, weekdays) => {
+    await withRuntimeRepository(BUSINESS_A, async (repository) => {
+      const result = await replaceWeeklyDays(repository, {
+        weekdays,
+        workingStartLocalTime: "08:00",
+        workingEndLocalTime: "20:00",
+        breakStartLocalTime: "12:00",
+        breakEndLocalTime: "14:00",
+        confirmReplaceExisting: false,
+        expectedAvailabilityVersion: 1,
+      });
+
+      expect(result.workingWindows.map((item) => item.weekday)).toEqual(weekdays);
+      expect(result.breaks.map((item) => item.weekday)).toEqual(weekdays);
+      expect(result.workingWindows.some((item) => item.weekday === 7)).toBe(false);
+
+      const persisted = await getWeeklyAvailability(repository);
+      expect(persisted.workingWindows.map((item) => item.weekday)).toEqual(weekdays);
+      expect(persisted.breaks.map((item) => item.weekday)).toEqual(weekdays);
+    });
+  });
 });

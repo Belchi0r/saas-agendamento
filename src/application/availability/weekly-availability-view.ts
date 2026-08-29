@@ -15,6 +15,7 @@ export type WeeklyIntervalView = Readonly<{
 export type WeeklyAvailabilityView = Readonly<{
   timezone: string | null;
   availabilityVersion: number;
+  futureConfirmedAppointmentsOutsideAvailability: number;
   workingWindows: readonly WeeklyIntervalView[];
   breaks: readonly WeeklyIntervalView[];
 }>;
@@ -37,6 +38,8 @@ export function toWeeklyAvailabilityView(
   return {
     timezone: snapshot.timezone,
     availabilityVersion: snapshot.availabilityVersion,
+    futureConfirmedAppointmentsOutsideAvailability:
+      snapshot.futureConfirmedAppointmentsOutsideAvailability,
     workingWindows: snapshot.workingWindows.map(toIntervalView),
     breaks: snapshot.breaks.map(toIntervalView),
   };

@@ -1,13 +1,20 @@
+import { cookies } from "next/headers";
+
+import { getManagedAppointment } from "@/application/booking/public-booking-use-cases";
 import { listPublicServices } from "@/application/services/service-use-cases";
 import { toServiceView } from "@/application/services/service-view";
 import { PublicServiceCatalog } from "@/components/public/service-catalog";
 import { createPublicServiceContext } from "@/infrastructure/composition/service-context";
+import { createManagementBookingContext } from "@/infrastructure/composition/public-booking-context";
+import { getBookingSecrets } from "@/infrastructure/config/server-env";
+import { CAPABILITY_COOKIE_NAME } from "@/infrastructure/security/booking-secrets";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function PublicServicesPage() {
   let pageData: Awaited<ReturnType<typeof loadPublicServices>> | null = null;
+  const existingAppointment = await loadExistingAppointment();
 
   try {
     pageData = await loadPublicServices();
@@ -37,8 +44,29 @@ export default async function PublicServicesPage() {
     <PublicServiceCatalog
       business={pageData.business}
       services={pageData.services.map(toServiceView)}
+      existingAppointment={existingAppointment}
     />
   );
+}
+
+async function loadExistingAppointment() {
+  const value = (await cookies()).get(CAPABILITY_COOKIE_NAME)?.value;
+  if (!value) return null;
+
+  try {
+    const appointment = await getManagedAppointment(
+      await createManagementBookingContext(),
+      value,
+      getBookingSecrets(),
+    );
+    return {
+      serviceName: appointment.serviceName,
+      localDate: appointment.localDate,
+      localTime: appointment.localTime,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function loadPublicServices() {

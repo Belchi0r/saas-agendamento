@@ -57,6 +57,52 @@ describe("Sprint 4 public booking domain", () => {
     expect(result.availableCandidates.at(-1)?.startLocalTime).toBe("17:15");
   });
 
+  it.each([
+    ["antes da abertura", "2026-08-31T10:00:00Z", "08:00"],
+    ["cinco minutos antes do slot", "2026-08-31T17:05:00Z", "14:15"],
+    ["durante a pausa", "2026-08-31T16:00:00Z", "14:00"],
+    ["exatamente 14:00", "2026-08-31T17:00:00Z", "14:00"],
+    ["um minuto depois", "2026-08-31T17:01:00Z", "14:15"],
+  ])("uses the injected clock at %s", (_label, nowUtc, firstSlot) => {
+    expect(referenceAvailability(45, nowUtc).availableCandidates[0]?.startLocalTime)
+      .toBe(firstSlot);
+  });
+
+  it("keeps cadence, whole duration, break, close boundary, and future dates deterministic", () => {
+    const fortyFive = referenceAvailability(45, "2026-08-31T10:00:00Z");
+    const fifty = referenceAvailability(50, "2026-08-31T10:00:00Z");
+
+    expect(fortyFive.availableCandidates.at(-1)?.startLocalTime).toBe("19:15");
+    expect(fifty.availableCandidates.at(-1)?.startLocalTime).toBe("19:00");
+    expect(fortyFive.availableCandidates.some((slot) => slot.startLocalTime === "11:30")).toBe(false);
+    expect(fortyFive.availableCandidates.some((slot) => slot.startLocalTime === "14:00")).toBe(true);
+    expect(fifty.availableCandidates.some((slot) => slot.startLocalTime === "19:15")).toBe(false);
+    expect(referenceAvailability(45, "2026-08-31T23:05:00Z").availableCandidates).toEqual([]);
+
+    const future = referenceAvailability(
+      45,
+      "2026-08-31T23:05:00Z",
+      "2026-09-07",
+    );
+    expect(future.availableCandidates[0]?.startLocalTime).toBe("08:00");
+  });
+
+  it("removes occupied candidates without persisting a slot entity", () => {
+    const result = referenceAvailability(
+      45,
+      "2026-08-31T10:00:00Z",
+      "2026-08-31",
+      [{
+        startAtUtc: "2026-08-31T17:00:00Z",
+        endAtUtc: "2026-08-31T17:45:00Z",
+      }],
+    );
+
+    expect(result.availableCandidates.some((slot) => slot.startLocalTime === "14:00")).toBe(false);
+    expect(result.availableCandidates.some((slot) => slot.startLocalTime === "14:45")).toBe(true);
+    expect("slots" in result).toBe(false);
+  });
+
   it("lets CLOSED remove the date and REPLACE replace weekly windows", () => {
     const base = { localDate: "2026-08-31", timezone: "America/Sao_Paulo", serviceDurationMinutes: 30, slotStepMinutes: 15, minimumLeadMinutes: 0, bookingHorizonDays: 30, nowUtc: "2026-08-27T12:00:00Z", weeklyWorkingWindows: weekly, weeklyBreaks: [], blockedPeriods: [], scheduleOccupancies: [] } as const;
     const closed = enumeratePublicAvailability({ ...base, dateException: { id: "x", businessId: BUSINESS, localDate: base.localDate, mode: "CLOSED", privateNote: null, version: 1, createdAt: new Date(0), updatedAt: new Date(0), workingWindows: [] } });
@@ -138,6 +184,42 @@ describe("Sprint 4 public booking domain", () => {
     await expect(listPublicBookingAvailability(repository, SERVICE, "2026-08-31", new Date("2026-08-27T12:00:00Z"))).rejects.toMatchObject({ status: enabled && configured ? 404 : 503 });
   });
 });
+
+function referenceAvailability(
+  serviceDurationMinutes: number,
+  nowUtc: string,
+  localDate = "2026-08-31",
+  scheduleOccupancies: readonly { startAtUtc: string; endAtUtc: string }[] = [],
+) {
+  return enumeratePublicAvailability({
+    localDate,
+    timezone: "America/Sao_Paulo",
+    serviceDurationMinutes,
+    slotStepMinutes: 15,
+    minimumLeadMinutes: 0,
+    bookingHorizonDays: 30,
+    nowUtc,
+    weeklyWorkingWindows: [{
+      id: `reference-${localDate}`,
+      businessId: BUSINESS,
+      weekday: 1,
+      startLocalTime: "08:00",
+      endLocalTime: "20:00",
+      createdAt: new Date(0),
+      updatedAt: new Date(0),
+    }],
+    weeklyBreaks: [{
+      id: `reference-break-${localDate}`,
+      businessId: BUSINESS,
+      weekday: 1,
+      startLocalTime: "12:00",
+      endLocalTime: "14:00",
+    }],
+    dateException: null,
+    blockedPeriods: [],
+    scheduleOccupancies,
+  });
+}
 
 function discoveryRepository(input: Readonly<{
   bookingHorizonDays: number;

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { ServiceView } from "@/application/services/service-view";
@@ -43,16 +44,23 @@ type DateNotice = Readonly<{
   status: Exclude<DateOption["status"], "AVAILABLE">;
   nextDate: DateOption | null;
 }>;
+type ExistingAppointmentSummary = Readonly<{
+  serviceName: string;
+  localDate: string;
+  localTime: string;
+}>;
 
 export function PublicServiceCatalog({
   business,
   services,
+  existingAppointment = null,
 }: Readonly<{
   business: Readonly<{
     publicName: string | null;
     publicDescription: string | null;
   }>;
   services: ServiceView[];
+  existingAppointment?: ExistingAppointmentSummary | null;
 }>) {
   const [step, setStep] = useState<Step>("SERVICE");
   const [serviceId, setServiceId] = useState("");
@@ -68,6 +76,7 @@ export function PublicServiceCatalog({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [managementAccessSaved, setManagementAccessSaved] = useState(false);
   const idempotencyKey = useRef<string | null>(null);
   const service = useMemo(
     () => services.find((item) => item.id === serviceId) ?? null,
@@ -243,7 +252,14 @@ export function PublicServiceCatalog({
             "Não foi possível confirmar. Seu agendamento ainda não foi criado.",
         );
       }
-      setConfirmation(body.booking);
+      const accessSaved = await establishManagementAccess(
+        body.booking.managementLink,
+      );
+      setManagementAccessSaved(accessSaved);
+      setConfirmation({
+        ...body.booking,
+        managementLink: accessSaved ? "/manage" : body.booking.managementLink,
+      });
       setStep("DONE");
     } catch (cause) {
       setError(
@@ -273,6 +289,21 @@ export function PublicServiceCatalog({
       </header>
 
       {step !== "DONE" ? <Progress step={step} /> : null}
+      {step === "SERVICE" && existingAppointment ? (
+        <section className="mt-6 border-l-4 border-[var(--accent)] bg-[var(--surface)] p-5">
+          <h2 className="text-lg font-semibold">Você tem um agendamento</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+            {existingAppointment.serviceName} · {formatDate(existingAppointment.localDate)}
+            {" às "}{existingAppointment.localTime}
+          </p>
+          <Link
+            href="/manage"
+            className="mt-3 inline-flex min-h-11 items-center font-semibold text-[var(--accent)] underline underline-offset-4"
+          >
+            Ver meu agendamento
+          </Link>
+        </section>
+      ) : null}
       {error ? (
         <p
           role="alert"
@@ -584,13 +615,36 @@ export function PublicServiceCatalog({
             Gerenciar agendamento
           </a>
           <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
-            Guarde este acesso e não o compartilhe. Por enquanto, a área de
-            gerenciamento permite somente consultar os dados da reserva.
+            {managementAccessSaved
+              ? "Acesso seguro salvo neste navegador por alguns minutos. Você pode recarregar esta página sem perder a confirmação."
+              : "Guarde este acesso e não o compartilhe."} Por enquanto, a área
+            de gerenciamento permite somente consultar os dados da reserva.
           </p>
         </section>
       ) : null}
     </main>
   );
+}
+
+export async function establishManagementAccess(
+  managementLink: string,
+  fetcher: typeof fetch = fetch,
+): Promise<boolean> {
+  const token = new URLSearchParams(new URL(managementLink).hash.slice(1)).get(
+    "token",
+  );
+  if (!token) return false;
+
+  try {
+    const response = await fetcher("/api/public/manage/exchange", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 const PROGRESS_STEPS = [

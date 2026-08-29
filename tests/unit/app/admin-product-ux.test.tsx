@@ -93,6 +93,89 @@ describe("Sprint 4.2 admin product UX", () => {
     });
   });
 
+  it("shows the exact bulk selection, never includes Sunday implicitly, and clears it after save", async () => {
+    const nextAvailability = {
+      ...availability(),
+      availabilityVersion: 4,
+      futureConfirmedAppointmentsOutsideAvailability: 0,
+      workingWindows: [1, 2, 3, 4, 5, 6].map((weekday) => ({
+        id: `work-${weekday}`,
+        weekday,
+        startLocalTime: "08:00",
+        endLocalTime: "20:00",
+      })),
+      breaks: [1, 2, 3, 4, 5, 6].map((weekday) => ({
+        id: `break-${weekday}`,
+        weekday,
+        startLocalTime: "12:00",
+        endLocalTime: "13:30",
+      })),
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ availability: nextAvailability }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<WeeklyAvailabilityManager initialAvailability={availability()} />);
+
+    for (const day of ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]) {
+      await user.click(screen.getByLabelText(day, { exact: true }));
+    }
+    expect(screen.getByLabelText("Domingo", { exact: true })).not.toBeChecked();
+    expect(screen.getByText(/Será aplicado em: Segunda-feira.+Sábado/)).toBeVisible();
+
+    await user.click(screen.getByRole("button", {
+      name: "Aplicar aos dias selecionados",
+    }));
+    await user.click(screen.getByRole("button", {
+      name: "Confirmar e substituir",
+    }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(options.body))).toMatchObject({
+      weekdays: [1, 2, 3, 4, 5, 6],
+      breakStartLocalTime: "12:00",
+      breakEndLocalTime: "13:30",
+    });
+    expect(screen.getByLabelText("Domingo", { exact: true })).not.toBeChecked();
+    expect(await screen.findByText("Nenhum dia selecionado.")).toBeVisible();
+  });
+
+  it("cancels a bulk replacement without changing the persisted view", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<WeeklyAvailabilityManager initialAvailability={availability()} />);
+
+    await user.click(screen.getByLabelText("Segunda", { exact: true }));
+    await user.click(screen.getByRole("button", {
+      name: "Aplicar aos dias selecionados",
+    }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getAllByText("09:00–18:00", { exact: true })).toHaveLength(2);
+    expect(screen.queryByText("Substituir horários existentes?")).not.toBeInTheDocument();
+  });
+
+  it("signals confirmed appointments outside the current schedule without implying cancellation", () => {
+    render(
+      <WeeklyAvailabilityManager
+        initialAvailability={{
+          ...availability(),
+          futureConfirmedAppointmentsOutsideAvailability: 2,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", {
+      name: "Agendamentos fora dos horários atuais",
+    })).toBeVisible();
+    expect(screen.getByText(/2 agendamentos futuros continuam confirmados/)).toBeVisible();
+  });
+
   it("marks the current admin destination and does not add Sprint 5 navigation", () => {
     render(<AdminNavigation active="weekly" />);
     expect(screen.getByRole("link", { name: "Horários" })).toHaveAttribute(
@@ -120,6 +203,7 @@ function availability() {
   return {
     timezone: "America/Sao_Paulo",
     availabilityVersion: 3,
+    futureConfirmedAppointmentsOutsideAvailability: 0,
     workingWindows: [{
       id: "monday",
       weekday: 1,
