@@ -41,11 +41,20 @@ export type PersistPublicBooking = Readonly<{
   token: Readonly<{ id: string; hash: Buffer; version: number }>;
   receipt: Readonly<{ id: string; operation: string; keyHash: Buffer; requestFingerprint: Buffer; fingerprintVersion: string; responseStatus: number; responseEnvelope: Buffer; envelopeNonce: Buffer; envelopeAuthTag: Buffer; envelopeKeyVersion: string; envelopeExpiresAt: Date; createdAt: Date; expiresAt: Date }>;
 }>;
+export type PersistAdminBooking = Readonly<{
+  customer: Readonly<{ id: string; name: string; whatsappE164: string }>;
+  appointment: PublicAppointmentView & Readonly<{ serviceId: string; customerId: string; serviceDescription: string | null; occupiedStartAt: string; occupiedEndAt: string; createdAt: Date }>;
+  occupancyId: string;
+  eventId: string;
+  receipt: Readonly<{ id: string; operation: string; keyHash: Buffer; requestFingerprint: Buffer; fingerprintVersion: string; responseStatus: number; createdAt: Date; expiresAt: Date }>;
+}>;
 export interface PublicBookingTransaction {
   lockIdempotency(firstKey: number, secondKey: number): Promise<void>;
   findIdempotencyReceipt(operation: string, keyHash: Buffer): Promise<IdempotencyReceipt | null>;
   loadFactsForConfirmation(serviceId: string, localDate: string): Promise<BookingFacts>;
   insertBooking(effect: PersistPublicBooking): Promise<void>;
+  insertAdminBooking(effect: PersistAdminBooking): Promise<void>;
+  findAppointmentById(appointmentId: string): Promise<PublicAppointmentView | null>;
 }
 export type ManagementTokenAuthorization = Readonly<{ tokenRef: string; tokenVersion: number; appointmentVersion: number }>;
 export interface PublicBookingRepository {

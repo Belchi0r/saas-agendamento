@@ -176,13 +176,16 @@ describe("Sprint 4.2 admin product UX", () => {
     expect(screen.getByText(/2 agendamentos futuros continuam confirmados/)).toBeVisible();
   });
 
-  it("marks the current admin destination and does not add Sprint 5 navigation", () => {
-    render(<AdminNavigation active="weekly" />);
-    expect(screen.getByRole("link", { name: "Horários" })).toHaveAttribute(
+  it("shows the Sprint 5 operational navigation and marks the current destination", () => {
+    render(<AdminNavigation active="agenda" />);
+    expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    expect(screen.queryByRole("link", { name: "Agendamentos" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Hoje" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Clientes" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Menu" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Horários" })).not.toBeInTheDocument();
   });
 });
 

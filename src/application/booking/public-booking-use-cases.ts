@@ -85,6 +85,13 @@ export type PublicBookingConfirmation = Readonly<{
   managementLink: string;
 }>;
 
+export type AdminBookingConfirmation = Readonly<{
+  disposition: "CREATED" | "REPLAYED";
+  appointment: PublicAppointmentView;
+}>;
+
+const ADMIN_BOOKING_OPERATION = "admin-booking/v1";
+
 type StoredBookingResponse = Omit<PublicBookingConfirmation, "disposition">;
 
 export async function listPublicBookingAvailability(
@@ -94,7 +101,17 @@ export async function listPublicBookingAvailability(
   now = new Date(),
 ): Promise<BookingAvailabilityView> {
   const facts = await repository.loadAvailabilityFacts(serviceId, localDate);
-  return calculatePublicAvailability(facts, localDate, now);
+  return calculateBookingAvailability(facts, localDate, now, true);
+}
+
+export async function listAdminBookingAvailability(
+  repository: PublicBookingRepository,
+  serviceId: string,
+  localDate: string,
+  now = new Date(),
+): Promise<BookingAvailabilityView> {
+  const facts = await repository.loadAvailabilityFacts(serviceId, localDate);
+  return calculateBookingAvailability(facts, localDate, now, false);
 }
 
 export async function listPublicBookingDateOptions(
@@ -102,45 +119,77 @@ export async function listPublicBookingDateOptions(
   serviceId: string,
   now = new Date(),
 ): Promise<PublicBookingDateDiscovery> {
-  const profile = requirePublicBookingProfile(
-    await repository.loadBookingProfile(serviceId),
-  );
-  const nowInstant = Temporal.Instant.from(now.toISOString());
-  const today = nowInstant
-    .toZonedDateTimeISO(profile.timezone)
-    .toPlainDate();
-  const horizonEnd = today.add({ days: profile.policy.bookingHorizonDays });
-  const calendar = await repository.loadDateDiscoveryCalendar({
-    startLocalDate: today.toString(),
-    endLocalDate: horizonEnd.toString(),
-    startAtUtc: localDayBoundary(today, profile.timezone),
-    endAtUtc: localDayBoundary(horizonEnd.add({ days: 1 }), profile.timezone),
-  });
-  const exceptions = new Map(
-    calendar.dateExceptions.map((exception) => [exception.localDate, exception]),
-  );
-  const dates: PublicBookingDateOption[] = [];
+  const profile = requireBookingProfile(await repository.loadBookingProfile(serviceId), true);
+  return discoverBookingDates(repository, profile, now);
+}
 
-  for (
-    let date = today;
-    Temporal.PlainDate.compare(date, horizonEnd) <= 0;
-    date = date.add({ days: 1 })
-  ) {
-    dates.push(classifyBookingDate(
-      profile,
-      calendar,
-      exceptions.get(date.toString()) ?? null,
-      date.toString(),
-      now,
-    ));
+export async function listAdminBookingDateOptions(
+  repository: PublicBookingRepository,
+  serviceId: string,
+  now = new Date(),
+): Promise<PublicBookingDateDiscovery> {
+  const profile = requireBookingProfile(await repository.loadBookingProfile(serviceId), false);
+  return discoverBookingDates(repository, profile, now);
+}
+
+export async function confirmAdminBooking(
+  repository: PublicBookingRepository,
+  rawCommand: PublicBookingCommand,
+  rawIdempotencyKey: string,
+  idempotencyPepper: Buffer,
+  now = new Date(),
+): Promise<AdminBookingConfirmation> {
+  assertIdempotencyKey(rawIdempotencyKey);
+  const command = normalizeBookingCommand(rawCommand);
+  const fingerprint = createHash("sha256").update(stableSerialize(command), "utf8").digest();
+  const keyHash = secretHmac(rawIdempotencyKey, idempotencyPepper);
+  const lockDigest = createHash("sha256").update(repository.scope.businessId).update(ADMIN_BOOKING_OPERATION).update(keyHash).digest();
+  try {
+    return await repository.transaction(async (transaction) => {
+      await transaction.lockIdempotency(lockDigest.readInt32BE(0), lockDigest.readInt32BE(4));
+      const existing = await transaction.findIdempotencyReceipt(ADMIN_BOOKING_OPERATION, keyHash);
+      if (existing) {
+        if (!existing.requestFingerprint.equals(fingerprint)) {
+          throw new ApplicationError("IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_REQUEST", "Esta chave já foi usada para outro agendamento.", 409);
+        }
+        const appointment = await transaction.findAppointmentById(existing.appointmentId);
+        if (!appointment) throw new Error("IDEMPOTENT_APPOINTMENT_NOT_FOUND");
+        return { disposition: "REPLAYED", appointment };
+      }
+      const facts = await transaction.loadFactsForConfirmation(command.schedule.serviceId, command.schedule.localDate);
+      const availability = calculateBookingAvailability(facts, command.schedule.localDate, now, false);
+      if (!reviewedServiceMatches(command.reviewedService, availability.service)) {
+        throw new ApplicationError("SERVICE_CHANGED", "O serviço mudou. Revise os dados antes de confirmar.", 409);
+      }
+      const slot = availability.slots.find((candidate) => candidate.startLocalTime === command.schedule.localTime);
+      if (!slot) throw slotUnavailable();
+      const appointmentId = randomUUID();
+      const customerId = randomUUID();
+      const appointment: PublicAppointmentView = {
+        appointmentId, status: "CONFIRMED", version: 1,
+        serviceName: availability.service.name, durationMinutes: availability.service.durationMinutes,
+        priceMinor: availability.service.priceMinor, currencyCode: availability.service.currencyCode,
+        customerName: command.customer.name, customerWhatsapp: command.customer.whatsappE164,
+        scheduledStartAt: slot.startAtUtc, scheduledEndAt: slot.endAtUtc,
+        timezone: availability.timezone, localDate: command.schedule.localDate,
+        localTime: command.schedule.localTime, utcOffsetMinutes: offsetToMinutes(slot.offset),
+      };
+      await transaction.insertAdminBooking({
+        customer: { id: customerId, name: command.customer.name, whatsappE164: command.customer.whatsappE164 },
+        appointment: { ...appointment, serviceId: availability.service.id, customerId,
+          serviceDescription: availability.service.description, occupiedStartAt: slot.startAtUtc,
+          occupiedEndAt: slot.endAtUtc, createdAt: now },
+        occupancyId: randomUUID(), eventId: randomUUID(),
+        receipt: { id: randomUUID(), operation: ADMIN_BOOKING_OPERATION, keyHash,
+          requestFingerprint: fingerprint, fingerprintVersion: command.version,
+          responseStatus: 201, createdAt: now, expiresAt: new Date(now.getTime() + BOOKING_RECEIPT_TTL_MS) },
+      });
+      return { disposition: "CREATED", appointment };
+    });
+  } catch (error) {
+    if (findPostgresError(error)?.code === "23P01") throw slotUnavailable();
+    throw error;
   }
-
-  return {
-    timezone: profile.timezone,
-    horizonStartDate: today.toString(),
-    horizonEndDate: horizonEnd.toString(),
-    dates,
-  };
 }
 
 export async function confirmPublicBooking(
@@ -151,38 +200,8 @@ export async function confirmPublicBooking(
   appOrigin: string,
   now = new Date(),
 ): Promise<PublicBookingConfirmation> {
-  if (
-    rawIdempotencyKey.length < 16 ||
-    rawIdempotencyKey.length > 200 ||
-    !/^[A-Za-z0-9._~-]+$/.test(rawIdempotencyKey)
-  ) {
-    throw new ApplicationError(
-      "IDEMPOTENCY_KEY_INVALID",
-      "Não foi possível identificar esta tentativa de confirmação.",
-      400,
-    );
-  }
-
-  let command: ReturnType<typeof normalizePublicBookingCommand>;
-  try {
-    command = normalizePublicBookingCommand({
-      ...rawCommand,
-      whatsappE164: normalizeBrazilianWhatsapp(rawCommand.whatsappE164),
-    });
-  } catch (error) {
-    if (error instanceof BrazilianWhatsappError) {
-      throw new ApplicationError(
-        "BRAZILIAN_WHATSAPP_INVALID",
-        "Digite um WhatsApp válido com DDD.",
-        400,
-      );
-    }
-    throw new ApplicationError(
-      "PUBLIC_BOOKING_INPUT_INVALID",
-      "Revise os dados do agendamento.",
-      400,
-    );
-  }
+  assertIdempotencyKey(rawIdempotencyKey);
+  const command = normalizeBookingCommand(rawCommand);
 
   const serialized = stableSerialize(command);
   const fingerprint = createHash("sha256").update(serialized, "utf8").digest();
@@ -252,11 +271,7 @@ export async function confirmPublicBooking(
         command.schedule.serviceId,
         command.schedule.localDate,
       );
-      const availability = calculatePublicAvailability(
-        facts,
-        command.schedule.localDate,
-        now,
-      );
+      const availability = calculateBookingAvailability(facts, command.schedule.localDate, now, true);
       if (!reviewedServiceMatches(command.reviewedService, availability.service)) {
         throw new ApplicationError(
           "SERVICE_CHANGED",
@@ -433,12 +448,13 @@ export function revokeManagementToken(
   return repository.revokeManagementToken(appointmentId, now, reason);
 }
 
-function calculatePublicAvailability(
+function calculateBookingAvailability(
   facts: BookingFacts,
   localDate: string,
   now: Date,
+  requirePublicEnabled: boolean,
 ): BookingAvailabilityView {
-  const profile = requirePublicBookingProfile(facts);
+  const profile = requireBookingProfile(facts, requirePublicEnabled);
   const result = enumeratePublicAvailability({
     localDate,
     timezone: profile.timezone,
@@ -462,14 +478,14 @@ function calculatePublicAvailability(
   };
 }
 
-function requirePublicBookingProfile(facts: BookingProfileFacts): Readonly<{
+function requireBookingProfile(facts: BookingProfileFacts, requirePublicEnabled: boolean): Readonly<{
   timezone: string;
   business: NonNullable<BookingProfileFacts["business"]>;
   policy: NonNullable<BookingProfileFacts["policy"]>;
   service: NonNullable<BookingProfileFacts["service"]>;
 }> {
   if (
-    !facts.business?.publicBookingEnabled ||
+    !facts.business || (requirePublicEnabled && !facts.business.publicBookingEnabled) ||
     !facts.business.timezone ||
     !facts.policy
   ) {
@@ -511,8 +527,46 @@ function requirePublicBookingProfile(facts: BookingProfileFacts): Readonly<{
   };
 }
 
+async function discoverBookingDates(
+  repository: PublicBookingRepository,
+  profile: ReturnType<typeof requireBookingProfile>,
+  now: Date,
+): Promise<PublicBookingDateDiscovery> {
+  const nowInstant = Temporal.Instant.from(now.toISOString());
+  const today = nowInstant.toZonedDateTimeISO(profile.timezone).toPlainDate();
+  const horizonEnd = today.add({ days: profile.policy.bookingHorizonDays });
+  const calendar = await repository.loadDateDiscoveryCalendar({
+    startLocalDate: today.toString(), endLocalDate: horizonEnd.toString(),
+    startAtUtc: localDayBoundary(today, profile.timezone),
+    endAtUtc: localDayBoundary(horizonEnd.add({ days: 1 }), profile.timezone),
+  });
+  const exceptions = new Map(calendar.dateExceptions.map((exception) => [exception.localDate, exception]));
+  const dates: PublicBookingDateOption[] = [];
+  for (let date = today; Temporal.PlainDate.compare(date, horizonEnd) <= 0; date = date.add({ days: 1 })) {
+    dates.push(classifyBookingDate(profile, calendar, exceptions.get(date.toString()) ?? null, date.toString(), now));
+  }
+  return { timezone: profile.timezone, horizonStartDate: today.toString(), horizonEndDate: horizonEnd.toString(), dates };
+}
+
+function assertIdempotencyKey(value: string) {
+  if (value.length < 16 || value.length > 200 || !/^[A-Za-z0-9._~-]+$/.test(value)) {
+    throw new ApplicationError("IDEMPOTENCY_KEY_INVALID", "Não foi possível identificar esta tentativa de confirmação.", 400);
+  }
+}
+
+function normalizeBookingCommand(rawCommand: PublicBookingCommand) {
+  try {
+    return normalizePublicBookingCommand({ ...rawCommand, whatsappE164: normalizeBrazilianWhatsapp(rawCommand.whatsappE164) });
+  } catch (error) {
+    if (error instanceof BrazilianWhatsappError) {
+      throw new ApplicationError("BRAZILIAN_WHATSAPP_INVALID", "Digite um WhatsApp válido com DDD.", 400);
+    }
+    throw new ApplicationError("PUBLIC_BOOKING_INPUT_INVALID", "Revise os dados do agendamento.", 400);
+  }
+}
+
 function classifyBookingDate(
-  profile: ReturnType<typeof requirePublicBookingProfile>,
+  profile: ReturnType<typeof requireBookingProfile>,
   calendar: BookingDateCalendarFacts,
   dateException: BookingDateCalendarFacts["dateExceptions"][number] | null,
   localDate: string,

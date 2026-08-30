@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 const ITEMS = [
-  { key: "services", href: "/admin/servicos", label: "Serviços" },
-  { key: "weekly", href: "/admin/horarios", label: "Horários" },
-  { key: "special-dates", href: "/admin/datas-especiais", label: "Datas especiais" },
-  { key: "blocks", href: "/admin/bloqueios", label: "Bloqueios" },
+  { key: "today", href: "/admin/hoje", label: "Hoje" },
+  { key: "agenda", href: "/admin/agenda", label: "Agenda" },
+  { key: "customers", href: "/admin/clientes", label: "Clientes" },
+  { key: "menu", href: "/admin/menu", label: "Menu" },
 ] as const;
 
-export type AdminNavigationKey = (typeof ITEMS)[number]["key"];
+export type AdminNavigationKey = (typeof ITEMS)[number]["key"] | "services" | "weekly" | "special-dates" | "blocks";
 
 export function AdminNavigation({
   active,
@@ -17,15 +17,15 @@ export function AdminNavigation({
       className="mt-6"
       aria-label="Administração"
     >
-      <ul className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+      <ul className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap sm:gap-2">
         {ITEMS.map((item) => {
-          const current = item.key === active;
+          const current = item.key === active || (item.key === "menu" && ["services", "weekly", "special-dates", "blocks"].includes(active));
           return (
             <li key={item.key}>
               <Link
                 href={item.href}
                 aria-current={current ? "page" : undefined}
-                className={`flex min-h-11 items-center justify-center rounded-md border px-3 text-center text-sm font-semibold sm:px-4 ${
+                className={`flex min-h-11 items-center justify-center rounded-md border px-2 text-center text-xs font-semibold sm:px-4 sm:text-sm ${
                   current
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white"
                     : "border-transparent underline decoration-[var(--border)] underline-offset-4"

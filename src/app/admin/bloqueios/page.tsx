@@ -53,7 +53,7 @@ export default async function AdminBlockedPeriodsPage() {
           </div>
           <LogoutButton />
         </div>
-        <AdminNavigation active="blocks" />
+        <AdminNavigation active="menu" />
       </header>
       <BlockedPeriodManager initialBlockedPeriods={pageData.blockedPeriods} />
     </main>

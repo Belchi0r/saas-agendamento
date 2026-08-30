@@ -17,6 +17,7 @@ test.describe.serial("Sprint 2 weekly availability vertical slice", () => {
     await page.getByRole("button", { name: "Entrar" }).click();
 
     await expect(page).toHaveURL(/\/admin\/servicos$/);
+    await page.getByRole("link", { name: "Menu" }).click();
     await page.getByRole("link", { name: "Horários" }).click();
     await expect(page).toHaveURL(/\/admin\/horarios$/);
     await expect(

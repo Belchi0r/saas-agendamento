@@ -60,7 +60,7 @@ export default async function AdminSpecialDatesPage() {
           </div>
           <LogoutButton />
         </div>
-        <AdminNavigation active="special-dates" />
+        <AdminNavigation active="menu" />
       </header>
       <DateAvailabilityManager initialDateAvailability={pageData.dateAvailability} />
     </main>

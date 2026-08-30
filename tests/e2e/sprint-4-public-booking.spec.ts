@@ -49,6 +49,7 @@ test.describe.serial("Sprint 4 public booking vertical slice", () => {
       page.getByRole("heading", { name: "Barba 50 min E2E" }),
     ).toBeVisible();
 
+    await page.getByRole("link", { name: "Menu" }).click();
     await page.getByRole("link", { name: "Horários" }).click();
     await page.getByRole("checkbox", { name: "Terça", exact: true }).check();
     await page.getByLabel("Início", { exact: true }).fill("09:00");

@@ -16,6 +16,7 @@ test.describe.serial("Sprint 3 date exceptions and blocked periods", () => {
     await page.getByLabel("Senha").fill("e2e-password-strong");
     await page.getByRole("button", { name: "Entrar" }).click();
 
+    await page.getByRole("link", { name: "Menu" }).click();
     await page.getByRole("link", { name: "Datas especiais" }).click();
     await expect(
       page.getByRole("heading", { name: "Datas especiais", level: 1 }),
@@ -36,6 +37,7 @@ test.describe.serial("Sprint 3 date exceptions and blocked periods", () => {
     await page.reload();
     await expect(page.getByText("09:00–13:00", { exact: true })).toBeVisible();
 
+    await page.getByRole("link", { name: "Menu" }).click();
     await page.getByRole("link", { name: "Bloqueios" }).click();
     await page.getByRole("button", { name: "Bloquear período" }).click();
     await page.getByLabel("Data").fill("2026-12-24");

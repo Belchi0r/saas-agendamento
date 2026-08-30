@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Pool, PoolClient } from "pg";
-import type { BookingDateCalendarFacts, BookingDateDiscoveryRange, BookingFacts, BookingProfileFacts, IdempotencyReceipt, ManagementTokenAuthorization, PersistPublicBooking, PublicBookingRepository, PublicBookingTransaction } from "@/application/booking/public-booking-repository";
+import type { BookingDateCalendarFacts, BookingDateDiscoveryRange, BookingFacts, BookingProfileFacts, IdempotencyReceipt, ManagementTokenAuthorization, PersistAdminBooking, PersistPublicBooking, PublicBookingRepository, PublicBookingTransaction } from "@/application/booking/public-booking-repository";
 import type { DateAvailabilityException } from "@/domain/availability/date-availability";
 import type { PublicAppointmentView } from "@/domain/booking/public-booking";
 import type { BusinessScope } from "@/domain/business/business-scope";
@@ -194,6 +194,57 @@ class BookingTransaction implements PublicBookingTransaction {
       `insert into app_private.idempotency_request (id,business_id,operation,key_hash,request_fingerprint,fingerprint_version,status,appointment_id,response_status,response_envelope,envelope_nonce,envelope_auth_tag,envelope_key_version,envelope_expires_at,created_at,expires_at) values ($1,$2,$3,$4,$5,$6,'SUCCEEDED',$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [r.id,this.businessId,r.operation,r.keyHash,r.requestFingerprint,r.fingerprintVersion,a.appointmentId,r.responseStatus,r.responseEnvelope,r.envelopeNonce,r.envelopeAuthTag,r.envelopeKeyVersion,r.envelopeExpiresAt,r.createdAt,r.expiresAt],
     );
+  }
+
+  async insertAdminBooking(e: PersistAdminBooking): Promise<void> {
+    const a = e.appointment;
+    await this.client.query(
+      `insert into app_private.customer (id,business_id,display_name,whatsapp_e164,created_at,updated_at)
+       values ($1,$2,$3,$4,$5,$5)`,
+      [e.customer.id, this.businessId, e.customer.name, e.customer.whatsappE164, a.createdAt],
+    );
+    await this.client.query(
+      `insert into app_private.appointment (
+        id,business_id,service_id,customer_id,status,origin,version,
+        service_name_snapshot,service_description_snapshot,service_duration_minutes_snapshot,
+        service_price_minor_snapshot,currency_code_snapshot,customer_name_snapshot,
+        customer_whatsapp_snapshot,scheduled_start_at,scheduled_end_at,
+        occupied_start_at,occupied_end_at,timezone_snapshot,local_date_snapshot,
+        local_time_snapshot,utc_offset_minutes_snapshot,created_at,updated_at
+      ) values ($1,$2,$3,$4,'CONFIRMED','ADMIN',1,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$20)`,
+      [a.appointmentId,this.businessId,a.serviceId,a.customerId,a.serviceName,a.serviceDescription,a.durationMinutes,a.priceMinor,a.currencyCode,a.customerName,e.customer.whatsappE164,a.scheduledStartAt,a.scheduledEndAt,a.occupiedStartAt,a.occupiedEndAt,a.timezone,a.localDate,a.localTime,a.utcOffsetMinutes,a.createdAt],
+    );
+    await this.client.query(
+      `insert into app_private.schedule_occupancy (id,business_id,appointment_id,occupied_period,created_at)
+       values ($1,$2,$3,tstzrange($4::timestamptz,$5::timestamptz,'[)'),$6)`,
+      [e.occupancyId,this.businessId,a.appointmentId,a.occupiedStartAt,a.occupiedEndAt,a.createdAt],
+    );
+    await this.client.query(
+      `insert into app_private.appointment_event
+        (id,appointment_id,appointment_version,event_type,actor_type,occurred_at,to_status,to_start_at,to_end_at,details)
+       values ($1,$2,1,'CREATED','ADMIN',$3,'CONFIRMED',$4,$5,$6::jsonb)`,
+      [e.eventId,a.appointmentId,a.createdAt,a.scheduledStartAt,a.scheduledEndAt,JSON.stringify({ schemaVersion: 1, origin: "ADMIN" })],
+    );
+    const r = e.receipt;
+    await this.client.query(
+      `insert into app_private.idempotency_request
+        (id,business_id,operation,key_hash,request_fingerprint,fingerprint_version,status,appointment_id,response_status,created_at,expires_at)
+       values ($1,$2,$3,$4,$5,$6,'SUCCEEDED',$7,$8,$9,$10)`,
+      [r.id,this.businessId,r.operation,r.keyHash,r.requestFingerprint,r.fingerprintVersion,a.appointmentId,r.responseStatus,r.createdAt,r.expiresAt],
+    );
+  }
+
+  async findAppointmentById(appointmentId: string): Promise<PublicAppointmentView | null> {
+    const result = await this.client.query<ManagedRow>(
+      `select a.id as appointment_id,a.status,a.version,a.service_name_snapshot,
+              a.service_duration_minutes_snapshot,a.service_price_minor_snapshot,
+              a.currency_code_snapshot,a.customer_name_snapshot,a.customer_whatsapp_snapshot,
+              a.scheduled_start_at,a.scheduled_end_at,a.timezone_snapshot,
+              a.local_date_snapshot::text,a.local_time_snapshot::text,a.utc_offset_minutes_snapshot
+         from app_private.appointment a where a.business_id=$1 and a.id=$2`,
+      [this.businessId, appointmentId],
+    );
+    return result.rows[0] ? managedView(result.rows[0]) : null;
   }
 }
 

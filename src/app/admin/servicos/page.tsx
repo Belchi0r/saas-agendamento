@@ -75,7 +75,7 @@ export default async function AdminServicesPage() {
           </div>
           <LogoutButton />
         </div>
-        <AdminNavigation active="services" />
+        <AdminNavigation active="menu" />
       </header>
       <ServiceManager
         initialServices={pageData.services}

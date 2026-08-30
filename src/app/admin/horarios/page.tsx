@@ -75,7 +75,7 @@ export default async function AdminAvailabilityPage() {
           </div>
           <LogoutButton />
         </div>
-        <AdminNavigation active="weekly" />
+        <AdminNavigation active="menu" />
       </header>
 
       <WeeklyAvailabilityManager initialAvailability={pageData.availability} />
